@@ -1,29 +1,240 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Time, SeriesMarker } from "lightweight-charts";
+import { Chart } from "@/components/Chart";
+import { fetchKlines, subscribeKline, tfSeconds, PAIRS, TIMEFRAMES } from "@/lib/binance";
+import { detectCrossings } from "@/lib/indicators";
+import type { Candle, Signal } from "@/lib/types";
+import { useStore } from "@/lib/store";
+import { pushPopup } from "@/components/Popup";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Whale Tracker AI — Dashboard" },
+      { name: "description", content: "Monitor de baleias e sinais cripto em tempo real." },
     ],
   }),
-  component: Index,
+  component: Dashboard,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Dashboard() {
+  const { config, setConfig, whaleActive, toggleWhale, addSignal, updateSignal, history } = useStore();
+  const [candles, setCandles] = useState<Candle[]>([]);
+  const [markers, setMarkers] = useState<SeriesMarker<Time>[]>([]);
+  const activeRef = useRef<Signal | null>(null);
+  const proceduralRanRef = useRef<Set<string>>(new Set());
+  const lastClosedTimeRef = useRef<number>(0);
+
+  // Re-load candles on pair/tf change
+  useEffect(() => {
+    let alive = true;
+    fetchKlines(config.pair, config.timeframe).then((c) => {
+      if (alive) setCandles(c);
+    });
+    setMarkers([]);
+    activeRef.current = null;
+    return () => {
+      alive = false;
+    };
+  }, [config.pair, config.timeframe]);
+
+  // WebSocket stream
+  useEffect(() => {
+    const unsub = subscribeKline(config.pair, config.timeframe, ({ candle, closed }) => {
+      setCandles((prev) => {
+        if (prev.length === 0) return prev;
+        const last = prev[prev.length - 1];
+        if (candle.time === last.time) {
+          const next = prev.slice(0, -1);
+          next.push(candle);
+          return next;
+        }
+        if (candle.time > last.time) return [...prev.slice(-499), candle];
+        return prev;
+      });
+      if (closed) lastClosedTimeRef.current = candle.time;
+    });
+    return unsub;
+  }, [config.pair, config.timeframe]);
+
+  // Signal engine
+  useEffect(() => {
+    if (!whaleActive || candles.length < 100) return;
+    const tfSec = tfSeconds(config.timeframe);
+    const last = candles[candles.length - 1];
+    const prevClosed = candles[candles.length - 2];
+    if (!prevClosed) return;
+
+    // Detect cross on most recent CLOSED candle
+    const closedKey = `${prevClosed.time}`;
+    const active = activeRef.current;
+
+    // 1) generate new signal if none active
+    if (!active && lastClosedTimeRef.current === prevClosed.time && !proceduralRanRef.current.has(`gen-${closedKey}`)) {
+      proceduralRanRef.current.add(`gen-${closedKey}`);
+      const cr = detectCrossings(candles.slice(0, -1)); // up to closed candle
+      const dirs = [cr.ma, cr.macd, cr.stoch].filter(Boolean) as ("UP" | "DOWN")[];
+      if (dirs.length >= 2 && dirs.every((d) => d === dirs[0])) {
+        const direction = dirs[0];
+        const confidence = dirs.length === 3 ? 99 : (cr.ma && cr.macd ? 85 : 0);
+        if (confidence > 0) {
+          const sig: Signal = {
+            id: `${Date.now()}`,
+            pair: config.pair,
+            timeframe: config.timeframe,
+            direction,
+            confidence,
+            signalCandleStart: last.time, // next candle is current "last" already in progress
+            entryPrice: last.open,
+            result: "PENDING",
+            createdAt: Date.now(),
+          };
+          activeRef.current = sig;
+          addSignal(sig);
+          setMarkers([
+            {
+              time: last.time as Time,
+              position: direction === "UP" ? "belowBar" : "aboveBar",
+              color: direction === "UP" ? "#10d39a" : "#ef4444",
+              shape: direction === "UP" ? "arrowUp" : "arrowDown",
+              text: `${confidence}%`,
+            },
+          ]);
+          pushPopup({
+            variant: "signal",
+            title: `Sinal Gerado — ${direction === "UP" ? "ALTA" : "BAIXA"} (${confidence}%)`,
+            message: `${config.pair} • ${config.timeframe}`,
+          });
+          pushPopup({
+            variant: "started",
+            title: "Vela do sinal iniciada",
+            message: "Aguardando fechamento da vela...",
+          });
+        }
+      }
+    }
+
+    // 2) Procedural check & close result
+    if (active && active.signalCandleStart === last.time) {
+      const candleEnd = last.time + tfSec;
+      const now = Math.floor(Date.now() / 1000);
+      const remaining = candleEnd - now;
+      const proc = config.procedural;
+      const procKey = `proc-${active.id}`;
+      if (remaining <= proc.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
+        proceduralRanRef.current.add(procKey);
+        const cr = detectCrossings(candles);
+        const checks: ("UP" | "DOWN" | null)[] = [];
+        if (proc.checkMA) checks.push(cr.ma);
+        if (proc.checkMACD) checks.push(cr.macd);
+        if (proc.checkStochRSI) checks.push(cr.stoch);
+        // recoil = any opposite cross
+        const recoil = checks.some((d) => d && d !== active.direction);
+        if (recoil) {
+          updateSignal(active.id, { result: "CANCELED", closedAt: Date.now() });
+          activeRef.current = null;
+          setMarkers([]);
+          pushPopup({
+            variant: "canceled",
+            title: "Proceduralveo3 — Análise Cancelada",
+            message: "Recuo detectado antes do fechamento.",
+          });
+        }
+      }
+    }
+
+    // 3) Close signal when its candle has closed
+    if (active && lastClosedTimeRef.current === active.signalCandleStart) {
+      const closedCandle = candles.find((c) => c.time === active.signalCandleStart);
+      if (closedCandle) {
+        const win =
+          active.direction === "UP"
+            ? closedCandle.close > active.entryPrice
+            : closedCandle.close < active.entryPrice;
+        const result = win ? "WIN" : "LOSS";
+        updateSignal(active.id, { result, exitPrice: closedCandle.close, closedAt: Date.now() });
+        pushPopup({
+          variant: win ? "win" : "loss",
+          title: win ? "WIN ✓" : "LOSS ✗",
+          message: `${active.pair} • ${active.direction === "UP" ? "ALTA" : "BAIXA"}`,
+        });
+        activeRef.current = null;
+        setMarkers([]);
+      }
+    }
+  }, [candles, whaleActive, config, addSignal, updateSignal]);
+
+  const last = candles[candles.length - 1];
+  const prev = candles[candles.length - 2];
+  const change = last && prev ? ((last.close - prev.close) / prev.close) * 100 : 0;
+
+  const stats = useMemo(() => {
+    const closed = history.filter((h) => h.result === "WIN" || h.result === "LOSS");
+    const wins = history.filter((h) => h.result === "WIN").length;
+    const acc = closed.length ? Math.round((wins / closed.length) * 100) : 0;
+    return { wins, losses: closed.length - wins, acc };
+  }, [history]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="flex flex-col gap-4 animate-fade-up">
+      <div className="flex gap-2">
+        <select
+          value={config.pair}
+          onChange={(e) => setConfig({ pair: e.target.value })}
+          className="flex-1 rounded-xl glass-card px-3 py-2 text-sm font-medium"
+        >
+          {PAIRS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+        <select
+          value={config.timeframe}
+          onChange={(e) => setConfig({ timeframe: e.target.value })}
+          className="rounded-xl glass-card px-3 py-2 text-sm font-medium"
+        >
+          {TIMEFRAMES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <Chart candles={candles} markers={markers} />
+
+      <div className="grid grid-cols-3 gap-2">
+        <IndicatorCard label="Preço" value={last ? last.close.toFixed(2) : "—"} sub={`${change >= 0 ? "+" : ""}${change.toFixed(2)}%`} positive={change >= 0} />
+        <IndicatorCard label="Assertividade" value={`${stats.acc}%`} sub={`${stats.wins}W / ${stats.losses}L`} positive={stats.acc >= 60} />
+        <IndicatorCard label="Status" value={whaleActive ? "ATIVO" : "PAUSADO"} sub={activeRef.current ? "sinal aberto" : "monitorando"} positive={whaleActive} />
+      </div>
+
+      <div className="flex flex-col items-center mt-4">
+        <button
+          onClick={toggleWhale}
+          className={`relative grid h-32 w-32 place-items-center rounded-full text-5xl transition ${
+            whaleActive ? "animate-whale-pulse bg-gradient-to-br from-cyan-400/30 to-cyan-700/20 neon-border" : "glass-card"
+          }`}
+          aria-label="Ativar Baleia"
+        >
+          🐋
+        </button>
+        <span className="mt-3 font-display text-sm tracking-widest uppercase opacity-80">
+          {whaleActive ? "Baleia rastreando" : "Toque para iniciar"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function IndicatorCard({ label, value, sub, positive }: { label: string; value: string; sub: string; positive?: boolean }) {
+  return (
+    <div className="glass-card rounded-2xl p-3">
+      <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
+      <div className="font-display text-lg font-bold mt-1">{value}</div>
+      <div className={`text-xs mt-0.5 ${positive ? "text-[color:var(--win)]" : "text-[color:var(--loss)]"}`}>{sub}</div>
     </div>
   );
 }

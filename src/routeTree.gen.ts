@@ -9,8 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SobreRouteImport } from './routes/sobre'
+import { Route as Proceduralveo3RouteImport } from './routes/proceduralveo3'
+import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as EstatisticasRouteImport } from './routes/estatisticas'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as AnalisesFuturoRouteImport } from './routes/analises-futuro'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SobreRoute = SobreRouteImport.update({
+  id: '/sobre',
+  path: '/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Proceduralveo3Route = Proceduralveo3RouteImport.update({
+  id: '/proceduralveo3',
+  path: '/proceduralveo3',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoricoRoute = HistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstatisticasRoute = EstatisticasRouteImport.update({
+  id: '/estatisticas',
+  path: '/estatisticas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalisesFuturoRoute = AnalisesFuturoRouteImport.update({
+  id: '/analises-futuro',
+  path: '/analises-futuro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +55,116 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analises-futuro': typeof AnalisesFuturoRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/estatisticas': typeof EstatisticasRoute
+  '/historico': typeof HistoricoRoute
+  '/proceduralveo3': typeof Proceduralveo3Route
+  '/sobre': typeof SobreRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analises-futuro': typeof AnalisesFuturoRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/estatisticas': typeof EstatisticasRoute
+  '/historico': typeof HistoricoRoute
+  '/proceduralveo3': typeof Proceduralveo3Route
+  '/sobre': typeof SobreRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analises-futuro': typeof AnalisesFuturoRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/estatisticas': typeof EstatisticasRoute
+  '/historico': typeof HistoricoRoute
+  '/proceduralveo3': typeof Proceduralveo3Route
+  '/sobre': typeof SobreRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/analises-futuro'
+    | '/configuracoes'
+    | '/estatisticas'
+    | '/historico'
+    | '/proceduralveo3'
+    | '/sobre'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/analises-futuro'
+    | '/configuracoes'
+    | '/estatisticas'
+    | '/historico'
+    | '/proceduralveo3'
+    | '/sobre'
+  id:
+    | '__root__'
+    | '/'
+    | '/analises-futuro'
+    | '/configuracoes'
+    | '/estatisticas'
+    | '/historico'
+    | '/proceduralveo3'
+    | '/sobre'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalisesFuturoRoute: typeof AnalisesFuturoRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  EstatisticasRoute: typeof EstatisticasRoute
+  HistoricoRoute: typeof HistoricoRoute
+  Proceduralveo3Route: typeof Proceduralveo3Route
+  SobreRoute: typeof SobreRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sobre': {
+      id: '/sobre'
+      path: '/sobre'
+      fullPath: '/sobre'
+      preLoaderRoute: typeof SobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proceduralveo3': {
+      id: '/proceduralveo3'
+      path: '/proceduralveo3'
+      fullPath: '/proceduralveo3'
+      preLoaderRoute: typeof Proceduralveo3RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/historico': {
+      id: '/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof HistoricoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estatisticas': {
+      id: '/estatisticas'
+      path: '/estatisticas'
+      fullPath: '/estatisticas'
+      preLoaderRoute: typeof EstatisticasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analises-futuro': {
+      id: '/analises-futuro'
+      path: '/analises-futuro'
+      fullPath: '/analises-futuro'
+      preLoaderRoute: typeof AnalisesFuturoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +177,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalisesFuturoRoute: AnalisesFuturoRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
+  EstatisticasRoute: EstatisticasRoute,
+  HistoricoRoute: HistoricoRoute,
+  Proceduralveo3Route: Proceduralveo3Route,
+  SobreRoute: SobreRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
