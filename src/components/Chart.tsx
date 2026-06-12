@@ -24,7 +24,7 @@ export function Chart({ candles, markers }: Props) {
   const ma1Ref = useRef<ISeriesApi<"Line"> | null>(null);
   const ma2Ref = useRef<ISeriesApi<"Line"> | null>(null);
   const ma6Ref = useRef<ISeriesApi<"Line"> | null>(null);
-  const markersRef = useRef<ReturnType<typeof createSeriesMarkers> | null>(null);
+  const markersRef = useRef<ReturnType<typeof createSeriesMarkers<Time>> | null>(null);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -54,7 +54,7 @@ export function Chart({ candles, markers }: Props) {
     ma1Ref.current = chart.addSeries(LineSeries, { color: "#facc15", lineWidth: 1 });
     ma2Ref.current = chart.addSeries(LineSeries, { color: "#22c55e", lineWidth: 1 });
     ma6Ref.current = chart.addSeries(LineSeries, { color: "#ef4444", lineWidth: 1 });
-    markersRef.current = createSeriesMarkers(seriesRef.current!, []);
+    markersRef.current = createSeriesMarkers<Time>(seriesRef.current!, []);
     return () => chart.remove();
   }, []);
 
