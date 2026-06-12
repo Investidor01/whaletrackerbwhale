@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as Proceduralveo3RouteImport } from './routes/proceduralveo3'
 import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as EstatisticasRouteImport } from './routes/estatisticas'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SobreRoute = SobreRouteImport.update({
+  id: '/sobre',
+  path: '/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Proceduralveo3Route = Proceduralveo3RouteImport.update({
   id: '/proceduralveo3',
   path: '/proceduralveo3',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/estatisticas': typeof EstatisticasRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
+  '/sobre': typeof SobreRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/estatisticas': typeof EstatisticasRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
+  '/sobre': typeof SobreRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +70,7 @@ export interface FileRoutesById {
   '/estatisticas': typeof EstatisticasRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
+  '/sobre': typeof SobreRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,6 +80,7 @@ export interface FileRouteTypes {
     | '/estatisticas'
     | '/historico'
     | '/proceduralveo3'
+    | '/sobre'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -78,6 +88,7 @@ export interface FileRouteTypes {
     | '/estatisticas'
     | '/historico'
     | '/proceduralveo3'
+    | '/sobre'
   id:
     | '__root__'
     | '/'
@@ -85,6 +96,7 @@ export interface FileRouteTypes {
     | '/estatisticas'
     | '/historico'
     | '/proceduralveo3'
+    | '/sobre'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,10 +105,18 @@ export interface RootRouteChildren {
   EstatisticasRoute: typeof EstatisticasRoute
   HistoricoRoute: typeof HistoricoRoute
   Proceduralveo3Route: typeof Proceduralveo3Route
+  SobreRoute: typeof SobreRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sobre': {
+      id: '/sobre'
+      path: '/sobre'
+      fullPath: '/sobre'
+      preLoaderRoute: typeof SobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/proceduralveo3': {
       id: '/proceduralveo3'
       path: '/proceduralveo3'
@@ -141,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   EstatisticasRoute: EstatisticasRoute,
   HistoricoRoute: HistoricoRoute,
   Proceduralveo3Route: Proceduralveo3Route,
+  SobreRoute: SobreRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
