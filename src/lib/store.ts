@@ -22,6 +22,11 @@ export const useStore = create<State>()(
         pair: "BTCUSDT",
         timeframe: "1m",
         procedural: { seconds: 15, checkMA: true, checkMACD: true, checkStochRSI: true },
+        indicators: {
+          ma: { short: 7, mid: 25, long: 99, colorShort: "#facc15", colorMid: "#22c55e", colorLong: "#ef4444" },
+          macd: { fast: 12, slow: 26, signal: 9, color: "#06b6d4" },
+          stochRsi: { rsiP: 14, stochP: 14, kP: 3, dP: 3, color: "#a855f7" },
+        },
       },
       history: [],
       whaleActive: false,
