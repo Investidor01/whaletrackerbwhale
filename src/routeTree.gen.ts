@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Proceduralveo3RouteImport } from './routes/proceduralveo3'
 import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as EstatisticasRouteImport } from './routes/estatisticas'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -22,6 +23,11 @@ const Proceduralveo3Route = Proceduralveo3RouteImport.update({
 const HistoricoRoute = HistoricoRouteImport.update({
   id: '/historico',
   path: '/historico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstatisticasRoute = EstatisticasRouteImport.update({
+  id: '/estatisticas',
+  path: '/estatisticas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
@@ -38,12 +44,14 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/estatisticas': typeof EstatisticasRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/estatisticas': typeof EstatisticasRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
 }
@@ -51,20 +59,38 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/estatisticas': typeof EstatisticasRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/configuracoes' | '/historico' | '/proceduralveo3'
+  fullPaths:
+    | '/'
+    | '/configuracoes'
+    | '/estatisticas'
+    | '/historico'
+    | '/proceduralveo3'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/configuracoes' | '/historico' | '/proceduralveo3'
-  id: '__root__' | '/' | '/configuracoes' | '/historico' | '/proceduralveo3'
+  to:
+    | '/'
+    | '/configuracoes'
+    | '/estatisticas'
+    | '/historico'
+    | '/proceduralveo3'
+  id:
+    | '__root__'
+    | '/'
+    | '/configuracoes'
+    | '/estatisticas'
+    | '/historico'
+    | '/proceduralveo3'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
+  EstatisticasRoute: typeof EstatisticasRoute
   HistoricoRoute: typeof HistoricoRoute
   Proceduralveo3Route: typeof Proceduralveo3Route
 }
@@ -83,6 +109,13 @@ declare module '@tanstack/react-router' {
       path: '/historico'
       fullPath: '/historico'
       preLoaderRoute: typeof HistoricoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estatisticas': {
+      id: '/estatisticas'
+      path: '/estatisticas'
+      fullPath: '/estatisticas'
+      preLoaderRoute: typeof EstatisticasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes': {
@@ -105,6 +138,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
+  EstatisticasRoute: EstatisticasRoute,
   HistoricoRoute: HistoricoRoute,
   Proceduralveo3Route: Proceduralveo3Route,
 }
