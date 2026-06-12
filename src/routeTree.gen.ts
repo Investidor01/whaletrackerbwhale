@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Proceduralveo3RouteImport } from './routes/proceduralveo3'
 import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as IndexRouteImport } from './routes/index'
 
 const Proceduralveo3Route = Proceduralveo3RouteImport.update({
@@ -23,6 +24,11 @@ const HistoricoRoute = HistoricoRouteImport.update({
   path: '/historico',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -31,30 +37,34 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/historico' | '/proceduralveo3'
+  fullPaths: '/' | '/configuracoes' | '/historico' | '/proceduralveo3'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/historico' | '/proceduralveo3'
-  id: '__root__' | '/' | '/historico' | '/proceduralveo3'
+  to: '/' | '/configuracoes' | '/historico' | '/proceduralveo3'
+  id: '__root__' | '/' | '/configuracoes' | '/historico' | '/proceduralveo3'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
   HistoricoRoute: typeof HistoricoRoute
   Proceduralveo3Route: typeof Proceduralveo3Route
 }
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoricoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
   HistoricoRoute: HistoricoRoute,
   Proceduralveo3Route: Proceduralveo3Route,
 }
