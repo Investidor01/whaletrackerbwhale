@@ -11,6 +11,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { PopupHost } from "@/components/Popup";
+import { Layout } from "@/components/Layout";
 
 function NotFoundComponent() {
   return (
@@ -121,8 +123,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <Layout>
+        <Outlet />
+      </Layout>
+      <PopupHost />
     </QueryClientProvider>
   );
 }
