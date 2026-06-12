@@ -22,6 +22,7 @@ function Dashboard() {
   const { config, setConfig, whaleActive, toggleWhale, addSignal, updateSignal, history } = useStore();
   const [candles, setCandles] = useState<Candle[]>([]);
   const [markers, setMarkers] = useState<SeriesMarker<Time>[]>([]);
+  const [cross, setCross] = useState<{ ma: "UP" | "DOWN" | null; macd: "UP" | "DOWN" | null; stoch: "UP" | "DOWN" | null }>({ ma: null, macd: null, stoch: null });
   const activeRef = useRef<Signal | null>(null);
   const proceduralRanRef = useRef<Set<string>>(new Set());
   const lastClosedTimeRef = useRef<number>(0);
@@ -60,7 +61,11 @@ function Dashboard() {
 
   // Signal engine
   useEffect(() => {
-    if (!whaleActive || candles.length < 100) return;
+    if (candles.length < 30) return;
+    // Always compute live cross state for the cards (last closed candle)
+    const liveCross = detectCrossings(candles.slice(0, -1), config.indicators);
+    setCross(liveCross);
+    if (!whaleActive) return;
     const tfSec = tfSeconds(config.timeframe);
     const last = candles[candles.length - 1];
     const prevClosed = candles[candles.length - 2];
@@ -73,7 +78,7 @@ function Dashboard() {
     // 1) generate new signal if none active
     if (!active && lastClosedTimeRef.current === prevClosed.time && !proceduralRanRef.current.has(`gen-${closedKey}`)) {
       proceduralRanRef.current.add(`gen-${closedKey}`);
-      const cr = detectCrossings(candles.slice(0, -1)); // up to closed candle
+      const cr = detectCrossings(candles.slice(0, -1), config.indicators); // up to closed candle
       const dirs = [cr.ma, cr.macd, cr.stoch].filter(Boolean) as ("UP" | "DOWN")[];
       if (dirs.length >= 2 && dirs.every((d) => d === dirs[0])) {
         const direction = dirs[0];
@@ -124,7 +129,7 @@ function Dashboard() {
       const procKey = `proc-${active.id}`;
       if (remaining <= proc.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
         proceduralRanRef.current.add(procKey);
-        const cr = detectCrossings(candles);
+        const cr = detectCrossings(candles, config.indicators);
         const checks: ("UP" | "DOWN" | null)[] = [];
         if (proc.checkMA) checks.push(cr.ma);
         if (proc.checkMACD) checks.push(cr.macd);
@@ -205,10 +210,29 @@ function Dashboard() {
 
       <Chart candles={candles} markers={markers} />
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <IndicatorCard label="Preço" value={last ? last.close.toFixed(2) : "—"} sub={`${change >= 0 ? "+" : ""}${change.toFixed(2)}%`} positive={change >= 0} />
         <IndicatorCard label="Assertividade" value={`${stats.acc}%`} sub={`${stats.wins}W / ${stats.losses}L`} positive={stats.acc >= 60} />
-        <IndicatorCard label="Status" value={whaleActive ? "ATIVO" : "PAUSADO"} sub={activeRef.current ? "sinal aberto" : "monitorando"} positive={whaleActive} />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <CrossCard
+          label="MA"
+          sub={`${config.indicators.ma.short}/${config.indicators.ma.mid}/${config.indicators.ma.long}`}
+          dir={cross.ma}
+          color={config.indicators.ma.colorMid}
+        />
+        <CrossCard
+          label="MACD"
+          sub={`${config.indicators.macd.fast}/${config.indicators.macd.slow}/${config.indicators.macd.signal}`}
+          dir={cross.macd}
+          color={config.indicators.macd.color}
+        />
+        <CrossCard
+          label="StochRSI"
+          sub={`${config.indicators.stochRsi.rsiP}/${config.indicators.stochRsi.stochP}`}
+          dir={cross.stoch}
+          color={config.indicators.stochRsi.color}
+        />
       </div>
 
       <div className="flex flex-col items-center mt-4">
@@ -235,6 +259,20 @@ function IndicatorCard({ label, value, sub, positive }: { label: string; value: 
       <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
       <div className="font-display text-lg font-bold mt-1">{value}</div>
       <div className={`text-xs mt-0.5 ${positive ? "text-[color:var(--win)]" : "text-[color:var(--loss)]"}`}>{sub}</div>
+    </div>
+  );
+}
+
+function CrossCard({ label, sub, dir, color }: { label: string; sub: string; dir: "UP" | "DOWN" | null; color: string }) {
+  const value = dir === "UP" ? "ALTA" : dir === "DOWN" ? "BAIXA" : "—";
+  const cls = dir === "UP" ? "text-[color:var(--win)]" : dir === "DOWN" ? "text-[color:var(--loss)]" : "opacity-60";
+  return (
+    <div className="glass-card rounded-2xl p-3 border-l-2" style={{ borderLeftColor: color }}>
+      <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
+      <div className={`font-display text-lg font-bold mt-1 ${cls}`}>
+        {dir === "UP" ? "▲ " : dir === "DOWN" ? "▼ " : ""}{value}
+      </div>
+      <div className="text-[10px] mt-0.5 opacity-60">{sub}</div>
     </div>
   );
 }
