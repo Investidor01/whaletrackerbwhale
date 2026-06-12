@@ -3,6 +3,7 @@ import {
   createChart,
   CandlestickSeries,
   LineSeries,
+  createSeriesMarkers,
   type IChartApi,
   type ISeriesApi,
   type Time,
@@ -23,6 +24,7 @@ export function Chart({ candles, markers }: Props) {
   const ma1Ref = useRef<ISeriesApi<"Line"> | null>(null);
   const ma2Ref = useRef<ISeriesApi<"Line"> | null>(null);
   const ma6Ref = useRef<ISeriesApi<"Line"> | null>(null);
+  const markersRef = useRef<ReturnType<typeof createSeriesMarkers> | null>(null);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -52,6 +54,7 @@ export function Chart({ candles, markers }: Props) {
     ma1Ref.current = chart.addSeries(LineSeries, { color: "#facc15", lineWidth: 1 });
     ma2Ref.current = chart.addSeries(LineSeries, { color: "#22c55e", lineWidth: 1 });
     ma6Ref.current = chart.addSeries(LineSeries, { color: "#ef4444", lineWidth: 1 });
+    markersRef.current = createSeriesMarkers(seriesRef.current!, []);
     return () => chart.remove();
   }, []);
 
@@ -72,9 +75,7 @@ export function Chart({ candles, markers }: Props) {
   }, [candles]);
 
   useEffect(() => {
-    if (!seriesRef.current) return;
-    // @ts-expect-error: setMarkers exists at runtime in lightweight-charts
-    seriesRef.current.setMarkers(markers);
+    markersRef.current?.setMarkers(markers);
   }, [markers]);
 
   return <div ref={ref} className="h-[360px] w-full rounded-2xl glass-card overflow-hidden" />;
