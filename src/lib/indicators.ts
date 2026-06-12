@@ -130,19 +130,32 @@ export interface CrossResult {
   stoch: "UP" | "DOWN" | null;
 }
 
-export function detectCrossings(candles: Candle[]): CrossResult {
-  if (candles.length < 100) return { ma: null, macd: null, stoch: null };
+export interface IndicatorParams {
+  ma: { short: number; mid: number; long: number };
+  macd: { fast: number; slow: number; signal: number };
+  stochRsi: { rsiP: number; stochP: number; kP: number; dP: number };
+}
+
+const defaultParams: IndicatorParams = {
+  ma: { short: 7, mid: 25, long: 99 },
+  macd: { fast: 12, slow: 26, signal: 9 },
+  stochRsi: { rsiP: 14, stochP: 14, kP: 3, dP: 3 },
+};
+
+export function detectCrossings(candles: Candle[], params: IndicatorParams = defaultParams): CrossResult {
+  const minLen = Math.max(params.ma.long, params.macd.slow + params.macd.signal, params.stochRsi.rsiP + params.stochRsi.stochP) + 2;
+  if (candles.length < minLen) return { ma: null, macd: null, stoch: null };
   const closes = candles.map((c) => c.close);
-  const s = sma(closes, 7);
-  const m = sma(closes, 25);
-  const l = sma(closes, 99);
+  const s = sma(closes, params.ma.short);
+  const m = sma(closes, params.ma.mid);
+  const l = sma(closes, params.ma.long);
   const i = closes.length - 1;
   // MA cross: avg(short,mid) vs long
   const avgA1 = ((s[i - 1] ?? NaN) + (m[i - 1] ?? NaN)) / 2;
   const avgA2 = ((s[i] ?? NaN) + (m[i] ?? NaN)) / 2;
   const maCross = crossed(avgA1, avgA2, l[i - 1] ?? NaN, l[i] ?? NaN);
 
-  const mac = macd(closes);
+  const mac = macd(closes, params.macd.fast, params.macd.slow, params.macd.signal);
   const macdCross = crossed(
     mac.line[i - 1] ?? NaN,
     mac.line[i] ?? NaN,
@@ -150,7 +163,7 @@ export function detectCrossings(candles: Candle[]): CrossResult {
     mac.signal[i] ?? NaN,
   );
 
-  const st = stochRsi(closes);
+  const st = stochRsi(closes, params.stochRsi.rsiP, params.stochRsi.stochP, params.stochRsi.kP, params.stochRsi.dP);
   const stochCross = crossed(
     st.k[i - 1] ?? NaN,
     st.k[i] ?? NaN,
