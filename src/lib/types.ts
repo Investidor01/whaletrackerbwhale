@@ -32,4 +32,9 @@ export interface AppConfig {
     checkMACD: boolean;
     checkStochRSI: boolean;
   };
+  indicators: {
+    ma: { short: number; mid: number; long: number; colorShort: string; colorMid: string; colorLong: string };
+    macd: { fast: number; slow: number; signal: number; color: string };
+    stochRsi: { rsiP: number; stochP: number; kP: number; dP: number; color: string };
+  };
 }
