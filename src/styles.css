@@ -68,30 +68,30 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.14 0.04 260);
-  --foreground: oklch(0.97 0.01 240);
-  --card: oklch(0.18 0.05 262);
-  --card-foreground: oklch(0.97 0.01 240);
-  --popover: oklch(0.18 0.05 262);
-  --popover-foreground: oklch(0.97 0.01 240);
-  --primary: oklch(0.78 0.18 200);
-  --primary-foreground: oklch(0.12 0.05 260);
-  --secondary: oklch(0.24 0.05 262);
-  --secondary-foreground: oklch(0.97 0.01 240);
-  --muted: oklch(0.22 0.04 262);
-  --muted-foreground: oklch(0.72 0.03 240);
-  --accent: oklch(0.82 0.16 85);
-  --accent-foreground: oklch(0.12 0.05 260);
+  --radius: 0.5rem;
+  --background: oklch(0.125 0.012 95);
+  --foreground: oklch(0.92 0.012 95);
+  --card: oklch(0.18 0.014 95);
+  --card-foreground: oklch(0.92 0.012 95);
+  --popover: oklch(0.18 0.014 95);
+  --popover-foreground: oklch(0.92 0.012 95);
+  --primary: oklch(0.82 0.16 85);
+  --primary-foreground: oklch(0.13 0.015 95);
+  --secondary: oklch(0.24 0.014 95);
+  --secondary-foreground: oklch(0.92 0.012 95);
+  --muted: oklch(0.25 0.014 95);
+  --muted-foreground: oklch(0.68 0.018 95);
+  --accent: oklch(0.76 0.13 80);
+  --accent-foreground: oklch(0.13 0.015 95);
   --destructive: oklch(0.65 0.24 25);
   --destructive-foreground: oklch(0.98 0.01 240);
-  --border: oklch(0.3 0.05 260 / 60%);
-  --input: oklch(0.24 0.05 262);
-  --ring: oklch(0.78 0.18 200);
-  --neon: oklch(0.82 0.2 200);
+  --border: oklch(0.31 0.014 95 / 80%);
+  --input: oklch(0.23 0.014 95);
+  --ring: oklch(0.82 0.16 85);
+  --neon: oklch(0.82 0.16 85);
   --gold: oklch(0.82 0.16 85);
-  --win: oklch(0.74 0.18 152);
-  --loss: oklch(0.65 0.24 25);
+  --win: oklch(0.72 0.18 158);
+  --loss: oklch(0.63 0.22 20);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -152,32 +152,37 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     background-image:
-      radial-gradient(ellipse 80% 60% at 20% 0%, oklch(0.22 0.1 220 / 0.4), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 80% 100%, oklch(0.22 0.1 280 / 0.35), transparent 60%);
+      linear-gradient(180deg, oklch(0.18 0.016 95 / 0.9), transparent 34%),
+      radial-gradient(ellipse 90% 50% at 50% -10%, oklch(0.82 0.16 85 / 0.13), transparent 64%);
     background-attachment: fixed;
   }
-  h1, h2, h3, h4, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+  h1, h2, h3, h4, .font-display { font-family: var(--font-display); letter-spacing: 0; }
 }
 
 @utility glass-card {
-  background: linear-gradient(135deg, oklch(0.2 0.05 262 / 0.7), oklch(0.16 0.05 260 / 0.55));
-  backdrop-filter: blur(14px);
-  border: 1px solid oklch(0.78 0.18 200 / 0.18);
-  box-shadow: 0 8px 32px oklch(0 0 0 / 0.4), inset 0 1px 0 oklch(1 0 0 / 0.04);
+  background: linear-gradient(180deg, oklch(0.2 0.014 95 / 0.96), oklch(0.165 0.014 95 / 0.96));
+  border: 1px solid oklch(0.32 0.014 95 / 0.8);
+  box-shadow: 0 12px 30px oklch(0 0 0 / 0.32), inset 0 1px 0 oklch(1 0 0 / 0.035);
 }
 
 @utility neon-border {
-  border: 1px solid oklch(0.78 0.18 200 / 0.5);
-  box-shadow: 0 0 24px oklch(0.78 0.18 200 / 0.25), inset 0 0 12px oklch(0.78 0.18 200 / 0.08);
+  border: 1px solid oklch(0.82 0.16 85 / 0.6);
+  box-shadow: 0 0 24px oklch(0.82 0.16 85 / 0.2), inset 0 0 12px oklch(0.82 0.16 85 / 0.06);
 }
 
 @utility text-glow {
-  text-shadow: 0 0 18px oklch(0.78 0.18 200 / 0.6);
+  text-shadow: 0 0 18px oklch(0.82 0.16 85 / 0.45);
+}
+
+@utility binance-panel {
+  background: oklch(0.18 0.014 95 / 0.98);
+  border: 1px solid oklch(0.31 0.014 95 / 0.9);
+  box-shadow: 0 10px 26px oklch(0 0 0 / 0.3);
 }
 
 @keyframes whale-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.78 0.18 200 / 0.6), 0 0 40px oklch(0.78 0.18 200 / 0.4); }
-  50% { box-shadow: 0 0 0 20px oklch(0.78 0.18 200 / 0), 0 0 80px oklch(0.78 0.18 200 / 0.6); }
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.82 0.16 85 / 0.55), 0 0 40px oklch(0.82 0.16 85 / 0.34); }
+  50% { box-shadow: 0 0 0 20px oklch(0.82 0.16 85 / 0), 0 0 80px oklch(0.82 0.16 85 / 0.45); }
 }
 @keyframes slide-down {
   from { transform: translate(-50%, -120%); opacity: 0; }
