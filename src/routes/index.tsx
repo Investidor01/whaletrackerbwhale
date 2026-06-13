@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Time, SeriesMarker } from "lightweight-charts";
 import { Chart } from "@/components/Chart";
 import { fetchKlines, subscribeKline, tfSeconds, PAIRS, TIMEFRAMES } from "@/lib/binance";
-import { detectCrossings } from "@/lib/indicators";
+import { computeAll, detectCrossings } from "@/lib/indicators";
 import type { Candle, Signal } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { pushPopup } from "@/components/Popup";
