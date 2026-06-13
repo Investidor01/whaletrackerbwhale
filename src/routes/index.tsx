@@ -279,7 +279,7 @@ function Dashboard() {
         <button
           onClick={toggleWhale}
           className={`relative grid h-32 w-32 place-items-center rounded-full text-5xl transition ${
-            whaleActive ? "animate-whale-pulse bg-gradient-to-br from-cyan-400/30 to-cyan-700/20 neon-border" : "glass-card"
+            whaleActive ? "animate-whale-pulse bg-primary/15 neon-border text-primary" : "binance-panel hover:border-primary/60"
           }`}
           aria-label="Ativar Baleia"
         >
