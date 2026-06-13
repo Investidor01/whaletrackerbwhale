@@ -101,19 +101,18 @@ export interface IndicatorSnapshot {
   stochD: (number | null)[];
 }
 
-export function computeAll(candles: Candle[]): IndicatorSnapshot {
+export function computeAll(candles: Candle[], params: IndicatorParams = defaultParams): IndicatorSnapshot {
   const closes = candles.map((c) => c.close);
+  const mac = macd(closes, params.macd.fast, params.macd.slow, params.macd.signal);
+  const st = stochRsi(closes, params.stochRsi.rsiP, params.stochRsi.stochP, params.stochRsi.kP, params.stochRsi.dP);
   return {
-    maShort: sma(closes, 7).map((v) => v ?? NaN) as number[],
-    maMid: sma(closes, 25).map((v) => v ?? NaN) as number[],
-    maLong: sma(closes, 99).map((v) => v ?? NaN) as number[],
-    ...macd(closes),
-    ...((): { stochK: (number | null)[]; stochD: (number | null)[] } => {
-      const s = stochRsi(closes);
-      return { stochK: s.k, stochD: s.d };
-    })(),
-    macdLine: macd(closes).line,
-    macdSig: macd(closes).signal,
+    maShort: sma(closes, params.ma.short).map((v) => v ?? NaN) as number[],
+    maMid: sma(closes, params.ma.mid).map((v) => v ?? NaN) as number[],
+    maLong: sma(closes, params.ma.long).map((v) => v ?? NaN) as number[],
+    macdLine: mac.line,
+    macdSig: mac.signal,
+    stochK: st.k,
+    stochD: st.d,
   };
 }
 
