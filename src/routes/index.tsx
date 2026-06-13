@@ -63,6 +63,7 @@ function Dashboard() {
   useEffect(() => {
     if (candles.length < 30) return;
     const tfSec = tfSeconds(config.timeframe);
+    const liveCandle = candles[candles.length - 1];
     const snapshot = computeAll(candles, config.indicators);
     setCross(readIndicatorDirection(snapshot, candles.length - 1));
     if (!whaleActive) return;
@@ -135,13 +136,13 @@ function Dashboard() {
       }
     }
 
-    const liveKey = `${config.pair}-${config.timeframe}-${last.time}`;
+    const liveKey = `${config.pair}-${config.timeframe}-${liveCandle.time}`;
     if (!activeRef.current && !proceduralRanRef.current.has(`gen-${liveKey}`)) {
       const cr = detectCrossings(candles, config.indicators);
       const decision = signalDecision(cr, readIndicatorDirection(snapshot, candles.length - 1));
       if (decision) {
         proceduralRanRef.current.add(`gen-${liveKey}`);
-        const entryCandleStart = last.time + tfSec;
+        const entryCandleStart = liveCandle.time + tfSec;
         const entryCandle = candles.find((c) => c.time === entryCandleStart);
         const sig: Signal = {
           id: `${Date.now()}`,
@@ -149,7 +150,7 @@ function Dashboard() {
           timeframe: config.timeframe,
           direction: decision.direction,
           confidence: decision.confidence,
-          signalCandleStart: last.time,
+          signalCandleStart: liveCandle.time,
           entryCandleStart,
           entryPrice: entryCandle?.open ?? Number.NaN,
           result: "PENDING",
@@ -159,7 +160,7 @@ function Dashboard() {
         addSignal(sig);
         setMarkers((prevMarkers) => [
           ...prevMarkers,
-          signalMarker(sig, last),
+          signalMarker(sig, liveCandle),
         ].slice(-80));
         pushPopup({
           variant: "signal",
