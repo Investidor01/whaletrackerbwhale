@@ -16,12 +16,12 @@ export function pushPopup(p: Omit<PopupItem, "id">) {
 }
 
 const styles: Record<PopupVariant, string> = {
-  signal: "from-cyan-400/30 to-cyan-600/10 border-cyan-300/60 text-cyan-100",
-  started: "from-amber-400/30 to-amber-600/10 border-amber-300/60 text-amber-100",
-  win: "from-emerald-400/30 to-emerald-600/10 border-emerald-300/60 text-emerald-100",
-  loss: "from-rose-500/30 to-rose-700/10 border-rose-400/60 text-rose-100",
-  canceled: "from-zinc-400/30 to-zinc-600/10 border-zinc-300/50 text-zinc-100",
-  info: "from-violet-400/30 to-violet-600/10 border-violet-300/60 text-violet-100",
+  signal: "border-primary/70 text-primary",
+  started: "border-primary/70 text-primary",
+  win: "border-[color:var(--win)]/70 text-[color:var(--win)]",
+  loss: "border-[color:var(--loss)]/70 text-[color:var(--loss)]",
+  canceled: "border-muted-foreground/50 text-muted-foreground",
+  info: "border-primary/70 text-primary",
 };
 
 export function PopupHost() {
@@ -41,7 +41,7 @@ export function PopupHost() {
       {items.map((p) => (
         <div
           key={p.id}
-          className={`animate-slide-down rounded-2xl border bg-gradient-to-br px-4 py-3 backdrop-blur-xl shadow-[0_8px_40px_oklch(0_0_0/0.5)] ${styles[p.variant]}`}
+          className={`animate-slide-down rounded-lg border bg-card px-4 py-3 shadow-[0_8px_40px_oklch(0_0_0/0.5)] ${styles[p.variant]}`}
         >
           <div className="text-sm font-display font-bold tracking-wide">{p.title}</div>
           {p.message ? <div className="text-xs opacity-80 mt-0.5">{p.message}</div> : null}
