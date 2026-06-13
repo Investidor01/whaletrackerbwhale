@@ -302,12 +302,37 @@ function Dashboard() {
 
 function IndicatorCard({ label, value, sub, positive }: { label: string; value: string; sub: string; positive?: boolean }) {
   return (
-    <div className="glass-card rounded-2xl p-3">
+    <div className="binance-panel rounded-lg p-3">
       <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
       <div className="font-display text-lg font-bold mt-1">{value}</div>
       <div className={`text-xs mt-0.5 ${positive ? "text-[color:var(--win)]" : "text-[color:var(--loss)]"}`}>{sub}</div>
     </div>
   );
+}
+
+function LineCard({ title, dir, rows }: { title: string; dir: "UP" | "DOWN" | null; rows: { name: string; value: number | null; color: string }[] }) {
+  const label = dir === "UP" ? "Cruzamento CALL" : dir === "DOWN" ? "Cruzamento PUT" : "Aguardando";
+  return (
+    <div className="binance-panel rounded-lg p-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="font-display text-sm font-bold">{title}</div>
+        <div className={`text-[10px] font-bold uppercase ${dir === "UP" ? "text-[color:var(--win)]" : dir === "DOWN" ? "text-[color:var(--loss)]" : "text-muted-foreground"}`}>{label}</div>
+      </div>
+      <div className="space-y-2">
+        {rows.map((row) => (
+          <div key={row.name} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-xs">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: row.color, boxShadow: `0 0 12px ${row.color}` }} />
+            <span className="text-muted-foreground">{row.name}</span>
+            <span className="font-display font-bold">{formatLineValue(row.value)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatLineValue(value: number | null) {
+  return value === null || !Number.isFinite(value) ? "—" : Math.abs(value) < 1 ? value.toFixed(5) : value.toFixed(2);
 }
 
 function readIndicatorDirection(snapshot: IndicatorSnapshot, index: number): CrossResult {
