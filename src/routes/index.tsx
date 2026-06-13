@@ -270,6 +270,46 @@ function IndicatorCard({ label, value, sub, positive }: { label: string; value: 
   );
 }
 
+function readIndicatorDirection(snapshot: IndicatorSnapshot, index: number): CrossResult {
+  const maBlend = (snapshot.maShort[index] + snapshot.maMid[index]) / 2;
+  const ma = isFinite(maBlend) && isFinite(snapshot.maLong[index])
+    ? maBlend > snapshot.maLong[index] ? "UP" : "DOWN"
+    : null;
+  const macdLine = snapshot.macdLine[index];
+  const macdSig = snapshot.macdSig[index];
+  const macd = macdLine !== null && macdSig !== null ? macdLine > macdSig ? "UP" : "DOWN" : null;
+  const stochK = snapshot.stochK[index];
+  const stochD = snapshot.stochD[index];
+  const stoch = stochK !== null && stochD !== null ? stochK > stochD ? "UP" : "DOWN" : null;
+  return { ma, macd, stoch };
+}
+
+function signalDecision(cross: CrossResult, directions: CrossResult): { direction: Direction; confidence: number } | null {
+  const crossedDirections = [cross.ma, cross.macd, cross.stoch].filter(Boolean) as Direction[];
+  for (const direction of ["UP", "DOWN"] as const) {
+    if (!crossedDirections.includes(direction)) continue;
+    const confirmations = [directions.ma, directions.macd, directions.stoch].filter((d) => d === direction).length;
+    if (confirmations >= 3) return { direction, confidence: 99 };
+    if (confirmations >= 2) return { direction, confidence: 80 };
+  }
+  return null;
+}
+
+function signalMarker(signal: Signal, candle: Candle): SeriesMarker<Time> {
+  const range = Math.max(candle.high - candle.low, Math.abs(candle.close) * 0.001);
+  const isCall = signal.direction === "UP";
+  return {
+    id: signal.id,
+    time: signal.signalCandleStart as Time,
+    position: isCall ? "atPriceBottom" : "atPriceTop",
+    price: isCall ? candle.low - range * 1.35 : candle.high + range * 1.35,
+    color: isCall ? "#02c076" : "#f6465d",
+    shape: isCall ? "arrowUp" : "arrowDown",
+    text: `${isCall ? "CALL" : "PUT"} ${signal.confidence}%`,
+    size: 2,
+  };
+}
+
 function CrossCard({ label, sub, dir, color }: { label: string; sub: string; dir: "UP" | "DOWN" | null; color: string }) {
   const value = dir === "UP" ? "ALTA" : dir === "DOWN" ? "BAIXA" : "—";
   const cls = dir === "UP" ? "text-[color:var(--win)]" : dir === "DOWN" ? "text-[color:var(--loss)]" : "opacity-60";
