@@ -29,22 +29,22 @@ export function Chart({ candles, markers }: Props) {
         textColor: "#cbd5e1",
       },
       grid: {
-        vertLines: { color: "rgba(120,140,180,0.08)" },
-        horzLines: { color: "rgba(120,140,180,0.08)" },
+        vertLines: { color: "rgba(132,142,156,0.08)" },
+        horzLines: { color: "rgba(132,142,156,0.08)" },
       },
-      rightPriceScale: { borderColor: "rgba(120,140,180,0.2)" },
-      timeScale: { borderColor: "rgba(120,140,180,0.2)", timeVisible: true, secondsVisible: false },
+      rightPriceScale: { borderColor: "rgba(132,142,156,0.2)" },
+      timeScale: { borderColor: "rgba(132,142,156,0.2)", timeVisible: true, secondsVisible: false },
       autoSize: true,
       crosshair: { mode: 0 },
     });
     chartRef.current = chart;
     seriesRef.current = chart.addSeries(CandlestickSeries, {
-      upColor: "#10d39a",
-      downColor: "#ef4444",
-      borderUpColor: "#10d39a",
-      borderDownColor: "#ef4444",
-      wickUpColor: "#10d39a",
-      wickDownColor: "#ef4444",
+      upColor: "#02c076",
+      downColor: "#f6465d",
+      borderUpColor: "#02c076",
+      borderDownColor: "#f6465d",
+      wickUpColor: "#02c076",
+      wickDownColor: "#f6465d",
     });
     markersRef.current = createSeriesMarkers<Time>(seriesRef.current!, [], { autoScale: true, zOrder: "top" });
     return () => chart.remove();
