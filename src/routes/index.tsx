@@ -62,110 +62,115 @@ function Dashboard() {
   // Signal engine
   useEffect(() => {
     if (candles.length < 30) return;
-    // Always compute live cross state for the cards (last closed candle)
-    const liveCross = detectCrossings(candles.slice(0, -1), config.indicators);
-    setCross(liveCross);
-    if (!whaleActive) return;
     const tfSec = tfSeconds(config.timeframe);
     const last = candles[candles.length - 1];
-    const prevClosed = candles[candles.length - 2];
-    if (!prevClosed) return;
+    const snapshot = computeAll(candles, config.indicators);
+    setCross(readIndicatorDirection(snapshot, candles.length - 1));
+    if (!whaleActive) return;
+    let active = activeRef.current;
 
-    // Detect cross on most recent CLOSED candle
-    const closedKey = `${prevClosed.time}`;
-    const active = activeRef.current;
-
-    // 1) generate new signal if none active
-    if (!active && lastClosedTimeRef.current === prevClosed.time && !proceduralRanRef.current.has(`gen-${closedKey}`)) {
-      proceduralRanRef.current.add(`gen-${closedKey}`);
-      const cr = detectCrossings(candles.slice(0, -1), config.indicators); // up to closed candle
-      const dirs = [cr.ma, cr.macd, cr.stoch].filter(Boolean) as ("UP" | "DOWN")[];
-      if (dirs.length >= 2 && dirs.every((d) => d === dirs[0])) {
-        const direction = dirs[0];
-        const confidence = dirs.length === 3 ? 99 : (cr.ma && cr.macd ? 85 : 0);
-        if (confidence > 0) {
-          const sig: Signal = {
-            id: `${Date.now()}`,
-            pair: config.pair,
-            timeframe: config.timeframe,
-            direction,
-            confidence,
-            signalCandleStart: last.time, // next candle is current "last" already in progress
-            entryPrice: last.open,
-            result: "PENDING",
-            createdAt: Date.now(),
-          };
-          activeRef.current = sig;
-          addSignal(sig);
-          setMarkers([
-            {
-              time: last.time as Time,
-              position: direction === "UP" ? "belowBar" : "aboveBar",
-              color: direction === "UP" ? "#10d39a" : "#ef4444",
-              shape: direction === "UP" ? "arrowUp" : "arrowDown",
-              text: `${confidence}%`,
-            },
-          ]);
-          pushPopup({
-            variant: "signal",
-            title: `Sinal Gerado — ${direction === "UP" ? "ALTA" : "BAIXA"} (${confidence}%)`,
-            message: `${config.pair} • ${config.timeframe}`,
-          });
-          pushPopup({
-            variant: "started",
-            title: "Vela do sinal iniciada",
-            message: "Aguardando fechamento da vela...",
-          });
-        }
+    if (active?.entryCandleStart) {
+      const entryCandle = candles.find((c) => c.time === active?.entryCandleStart);
+      if (entryCandle && !active.startedAt) {
+        const patch: Partial<Signal> = { entryPrice: entryCandle.open, startedAt: Date.now() };
+        active = { ...active, ...patch };
+        activeRef.current = active;
+        updateSignal(active.id, patch);
+        pushPopup({
+          variant: "started",
+          title: "Vela iniciada",
+          message: `Entrada ${active.direction === "UP" ? "CALL" : "PUT"} • ${active.pair} ${active.timeframe}`,
+        });
       }
     }
 
-    // 2) Procedural check & close result
-    if (active && active.signalCandleStart === last.time) {
-      const candleEnd = last.time + tfSec;
-      const now = Math.floor(Date.now() / 1000);
-      const remaining = candleEnd - now;
-      const proc = config.procedural;
+    if (active?.entryCandleStart && active.startedAt && active.result === "PENDING") {
+      const entryCandle = candles.find((c) => c.time === active?.entryCandleStart);
+      const remaining = active.entryCandleStart + tfSec - Math.floor(Date.now() / 1000);
       const procKey = `proc-${active.id}`;
-      if (remaining <= proc.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
+      if (entryCandle && remaining <= config.procedural.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
         proceduralRanRef.current.add(procKey);
         const cr = detectCrossings(candles, config.indicators);
         const checks: ("UP" | "DOWN" | null)[] = [];
-        if (proc.checkMA) checks.push(cr.ma);
-        if (proc.checkMACD) checks.push(cr.macd);
-        if (proc.checkStochRSI) checks.push(cr.stoch);
-        // recoil = any opposite cross
+        if (config.procedural.checkMA) checks.push(cr.ma);
+        if (config.procedural.checkMACD) checks.push(cr.macd);
+        if (config.procedural.checkStochRSI) checks.push(cr.stoch);
         const recoil = checks.some((d) => d && d !== active.direction);
         if (recoil) {
           updateSignal(active.id, { result: "CANCELED", closedAt: Date.now() });
           activeRef.current = null;
-          setMarkers([]);
+          active = null;
           pushPopup({
             variant: "canceled",
             title: "Proceduralveo3 — Análise Cancelada",
             message: "Recuo detectado antes do fechamento.",
           });
+        } else {
+          const patch: Partial<Signal> = { proceduralConfirmedAt: Date.now() };
+          active = { ...active, ...patch };
+          activeRef.current = active;
+          updateSignal(active.id, patch);
+          pushPopup({
+            variant: "info",
+            title: "Proceduralveo3 Confirmado",
+            message: "Sem recuo nos indicadores selecionados.",
+          });
         }
       }
     }
 
-    // 3) Close signal when its candle has closed
-    if (active && lastClosedTimeRef.current === active.signalCandleStart) {
-      const closedCandle = candles.find((c) => c.time === active.signalCandleStart);
+    if (active?.entryCandleStart && lastClosedTimeRef.current === active.entryCandleStart) {
+      const closedCandle = candles.find((c) => c.time === active?.entryCandleStart);
       if (closedCandle) {
-        const win =
-          active.direction === "UP"
-            ? closedCandle.close > active.entryPrice
-            : closedCandle.close < active.entryPrice;
+        const entryPrice = Number.isFinite(active.entryPrice) ? active.entryPrice : closedCandle.open;
+        const win = active.direction === "UP" ? closedCandle.close > entryPrice : closedCandle.close < entryPrice;
         const result = win ? "WIN" : "LOSS";
-        updateSignal(active.id, { result, exitPrice: closedCandle.close, closedAt: Date.now() });
+        updateSignal(active.id, { result, entryPrice, exitPrice: closedCandle.close, closedAt: Date.now() });
         pushPopup({
           variant: win ? "win" : "loss",
           title: win ? "WIN ✓" : "LOSS ✗",
-          message: `${active.pair} • ${active.direction === "UP" ? "ALTA" : "BAIXA"}`,
+          message: `${active.pair} • ${active.direction === "UP" ? "CALL" : "PUT"}`,
         });
         activeRef.current = null;
-        setMarkers([]);
+        active = null;
+      }
+    }
+
+    const closedTime = lastClosedTimeRef.current;
+    const closedCandle = candles.find((c) => c.time === closedTime);
+    const closedKey = `${config.pair}-${config.timeframe}-${closedTime}`;
+    if (!activeRef.current && closedCandle && !proceduralRanRef.current.has(`gen-${closedKey}`)) {
+      proceduralRanRef.current.add(`gen-${closedKey}`);
+      const detectionCandles = candles.filter((c) => c.time <= closedTime);
+      const cr = detectCrossings(detectionCandles, config.indicators);
+      const closedSnapshot = computeAll(detectionCandles, config.indicators);
+      const decision = signalDecision(cr, readIndicatorDirection(closedSnapshot, detectionCandles.length - 1));
+      if (decision) {
+        const entryCandleStart = closedCandle.time + tfSec;
+        const entryCandle = candles.find((c) => c.time === entryCandleStart);
+        const sig: Signal = {
+          id: `${Date.now()}`,
+          pair: config.pair,
+          timeframe: config.timeframe,
+          direction: decision.direction,
+          confidence: decision.confidence,
+          signalCandleStart: closedCandle.time,
+          entryCandleStart,
+          entryPrice: entryCandle?.open ?? Number.NaN,
+          result: "PENDING",
+          createdAt: Date.now(),
+        };
+        activeRef.current = sig;
+        addSignal(sig);
+        setMarkers((prevMarkers) => [
+          ...prevMarkers,
+          signalMarker(sig, closedCandle),
+        ].slice(-80));
+        pushPopup({
+          variant: "signal",
+          title: `Sinal Gerado — ${sig.direction === "UP" ? "CALL" : "PUT"} (${sig.confidence}%)`,
+          message: `${sig.pair} • ${sig.timeframe} • entrada na próxima vela`,
+        });
       }
     }
   }, [candles, whaleActive, config, addSignal, updateSignal]);
