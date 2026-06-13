@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Time, SeriesMarker } from "lightweight-charts";
 import { Chart } from "@/components/Chart";
 import { fetchKlines, subscribeKline, tfSeconds, PAIRS, TIMEFRAMES } from "@/lib/binance";
-import { computeAll, detectCrossings } from "@/lib/indicators";
-import type { Candle, Signal } from "@/lib/types";
+import { computeAll, detectCrossings, type CrossResult, type IndicatorSnapshot } from "@/lib/indicators";
+import type { Candle, Direction, Signal } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { pushPopup } from "@/components/Popup";
 
@@ -63,7 +63,6 @@ function Dashboard() {
   useEffect(() => {
     if (candles.length < 30) return;
     const tfSec = tfSeconds(config.timeframe);
-    const last = candles[candles.length - 1];
     const snapshot = computeAll(candles, config.indicators);
     setCross(readIndicatorDirection(snapshot, candles.length - 1));
     if (!whaleActive) return;
@@ -86,8 +85,10 @@ function Dashboard() {
 
     if (active?.entryCandleStart && active.startedAt && active.result === "PENDING") {
       const current = active;
-      const entryCandle = candles.find((c) => c.time === active?.entryCandleStart);
-      const remaining = current.entryCandleStart + tfSec - Math.floor(Date.now() / 1000);
+      const entryStart = current.entryCandleStart;
+      if (!entryStart) return;
+      const entryCandle = candles.find((c) => c.time === entryStart);
+      const remaining = entryStart + tfSec - Math.floor(Date.now() / 1000);
       const procKey = `proc-${current.id}`;
       if (entryCandle && remaining <= config.procedural.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
         proceduralRanRef.current.add(procKey);
