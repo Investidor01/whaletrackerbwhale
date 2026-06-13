@@ -83,20 +83,17 @@ function Dashboard() {
       }
     }
 
-    if (active?.entryCandleStart && active.startedAt && active.result === "PENDING") {
+    if (active && active.result === "PENDING" && !active.proceduralConfirmedAt) {
       const current = active;
-      const entryStart = current.entryCandleStart;
-      if (!entryStart) return;
-      const entryCandle = candles.find((c) => c.time === entryStart);
-      const remaining = entryStart + tfSec - Math.floor(Date.now() / 1000);
+      const remaining = current.signalCandleStart + tfSec - Math.floor(Date.now() / 1000);
       const procKey = `proc-${current.id}`;
-      if (entryCandle && remaining <= config.procedural.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
+      if (remaining <= config.procedural.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
         proceduralRanRef.current.add(procKey);
-        const cr = detectCrossings(candles, config.indicators);
+        const proceduralState = readIndicatorDirection(computeAll(candles, config.indicators), candles.length - 1);
         const checks: ("UP" | "DOWN" | null)[] = [];
-        if (config.procedural.checkMA) checks.push(cr.ma);
-        if (config.procedural.checkMACD) checks.push(cr.macd);
-        if (config.procedural.checkStochRSI) checks.push(cr.stoch);
+        if (config.procedural.checkMA) checks.push(proceduralState.ma);
+        if (config.procedural.checkMACD) checks.push(proceduralState.macd);
+        if (config.procedural.checkStochRSI) checks.push(proceduralState.stoch);
         const recoil = checks.some((d) => d && d !== current.direction);
         if (recoil) {
           updateSignal(current.id, { result: "CANCELED", closedAt: Date.now() });
@@ -138,17 +135,13 @@ function Dashboard() {
       }
     }
 
-    const closedTime = lastClosedTimeRef.current;
-    const closedCandle = candles.find((c) => c.time === closedTime);
-    const closedKey = `${config.pair}-${config.timeframe}-${closedTime}`;
-    if (!activeRef.current && closedCandle && !proceduralRanRef.current.has(`gen-${closedKey}`)) {
-      proceduralRanRef.current.add(`gen-${closedKey}`);
-      const detectionCandles = candles.filter((c) => c.time <= closedTime);
-      const cr = detectCrossings(detectionCandles, config.indicators);
-      const closedSnapshot = computeAll(detectionCandles, config.indicators);
-      const decision = signalDecision(cr, readIndicatorDirection(closedSnapshot, detectionCandles.length - 1));
+    const liveKey = `${config.pair}-${config.timeframe}-${last.time}`;
+    if (!activeRef.current && !proceduralRanRef.current.has(`gen-${liveKey}`)) {
+      const cr = detectCrossings(candles, config.indicators);
+      const decision = signalDecision(cr, readIndicatorDirection(snapshot, candles.length - 1));
       if (decision) {
-        const entryCandleStart = closedCandle.time + tfSec;
+        proceduralRanRef.current.add(`gen-${liveKey}`);
+        const entryCandleStart = last.time + tfSec;
         const entryCandle = candles.find((c) => c.time === entryCandleStart);
         const sig: Signal = {
           id: `${Date.now()}`,
@@ -156,7 +149,7 @@ function Dashboard() {
           timeframe: config.timeframe,
           direction: decision.direction,
           confidence: decision.confidence,
-          signalCandleStart: closedCandle.time,
+          signalCandleStart: last.time,
           entryCandleStart,
           entryPrice: entryCandle?.open ?? Number.NaN,
           result: "PENDING",
@@ -166,7 +159,7 @@ function Dashboard() {
         addSignal(sig);
         setMarkers((prevMarkers) => [
           ...prevMarkers,
-          signalMarker(sig, closedCandle),
+          signalMarker(sig, last),
         ].slice(-80));
         pushPopup({
           variant: "signal",
