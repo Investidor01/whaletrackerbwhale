@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Time, SeriesMarker } from "lightweight-charts";
 import { Chart } from "@/components/Chart";
 import { fetchKlines, subscribeKline, tfSeconds, PAIRS, TIMEFRAMES } from "@/lib/binance";
-import { detectCrossings } from "@/lib/indicators";
-import type { Candle, Signal } from "@/lib/types";
+import { computeAll, detectCrossings, type CrossResult, type IndicatorSnapshot } from "@/lib/indicators";
+import type { Candle, Direction, Signal } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { pushPopup } from "@/components/Popup";
 
@@ -62,110 +62,111 @@ function Dashboard() {
   // Signal engine
   useEffect(() => {
     if (candles.length < 30) return;
-    // Always compute live cross state for the cards (last closed candle)
-    const liveCross = detectCrossings(candles.slice(0, -1), config.indicators);
-    setCross(liveCross);
-    if (!whaleActive) return;
     const tfSec = tfSeconds(config.timeframe);
-    const last = candles[candles.length - 1];
-    const prevClosed = candles[candles.length - 2];
-    if (!prevClosed) return;
+    const liveCandle = candles[candles.length - 1];
+    const snapshot = computeAll(candles, config.indicators);
+    setCross(readIndicatorDirection(snapshot, candles.length - 1));
+    if (!whaleActive) return;
+    let active = activeRef.current;
 
-    // Detect cross on most recent CLOSED candle
-    const closedKey = `${prevClosed.time}`;
-    const active = activeRef.current;
-
-    // 1) generate new signal if none active
-    if (!active && lastClosedTimeRef.current === prevClosed.time && !proceduralRanRef.current.has(`gen-${closedKey}`)) {
-      proceduralRanRef.current.add(`gen-${closedKey}`);
-      const cr = detectCrossings(candles.slice(0, -1), config.indicators); // up to closed candle
-      const dirs = [cr.ma, cr.macd, cr.stoch].filter(Boolean) as ("UP" | "DOWN")[];
-      if (dirs.length >= 2 && dirs.every((d) => d === dirs[0])) {
-        const direction = dirs[0];
-        const confidence = dirs.length === 3 ? 99 : (cr.ma && cr.macd ? 85 : 0);
-        if (confidence > 0) {
-          const sig: Signal = {
-            id: `${Date.now()}`,
-            pair: config.pair,
-            timeframe: config.timeframe,
-            direction,
-            confidence,
-            signalCandleStart: last.time, // next candle is current "last" already in progress
-            entryPrice: last.open,
-            result: "PENDING",
-            createdAt: Date.now(),
-          };
-          activeRef.current = sig;
-          addSignal(sig);
-          setMarkers([
-            {
-              time: last.time as Time,
-              position: direction === "UP" ? "belowBar" : "aboveBar",
-              color: direction === "UP" ? "#10d39a" : "#ef4444",
-              shape: direction === "UP" ? "arrowUp" : "arrowDown",
-              text: `${confidence}%`,
-            },
-          ]);
-          pushPopup({
-            variant: "signal",
-            title: `Sinal Gerado — ${direction === "UP" ? "ALTA" : "BAIXA"} (${confidence}%)`,
-            message: `${config.pair} • ${config.timeframe}`,
-          });
-          pushPopup({
-            variant: "started",
-            title: "Vela do sinal iniciada",
-            message: "Aguardando fechamento da vela...",
-          });
-        }
+    if (active?.entryCandleStart) {
+      const entryCandle = candles.find((c) => c.time === active?.entryCandleStart);
+      if (entryCandle && !active.startedAt) {
+        const patch: Partial<Signal> = { entryPrice: entryCandle.open, startedAt: Date.now() };
+        active = { ...active, ...patch };
+        activeRef.current = active;
+        updateSignal(active.id, patch);
+        pushPopup({
+          variant: "started",
+          title: "Vela iniciada",
+          message: `Entrada ${active.direction === "UP" ? "CALL" : "PUT"} • ${active.pair} ${active.timeframe}`,
+        });
       }
     }
 
-    // 2) Procedural check & close result
-    if (active && active.signalCandleStart === last.time) {
-      const candleEnd = last.time + tfSec;
-      const now = Math.floor(Date.now() / 1000);
-      const remaining = candleEnd - now;
-      const proc = config.procedural;
-      const procKey = `proc-${active.id}`;
-      if (remaining <= proc.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
+    if (active && active.result === "PENDING" && !active.proceduralConfirmedAt) {
+      const current = active;
+      const remaining = current.signalCandleStart + tfSec - Math.floor(Date.now() / 1000);
+      const procKey = `proc-${current.id}`;
+      if (remaining <= config.procedural.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
         proceduralRanRef.current.add(procKey);
-        const cr = detectCrossings(candles, config.indicators);
+        const proceduralState = readIndicatorDirection(computeAll(candles, config.indicators), candles.length - 1);
         const checks: ("UP" | "DOWN" | null)[] = [];
-        if (proc.checkMA) checks.push(cr.ma);
-        if (proc.checkMACD) checks.push(cr.macd);
-        if (proc.checkStochRSI) checks.push(cr.stoch);
-        // recoil = any opposite cross
-        const recoil = checks.some((d) => d && d !== active.direction);
+        if (config.procedural.checkMA) checks.push(proceduralState.ma);
+        if (config.procedural.checkMACD) checks.push(proceduralState.macd);
+        if (config.procedural.checkStochRSI) checks.push(proceduralState.stoch);
+        const recoil = checks.some((d) => d && d !== current.direction);
         if (recoil) {
-          updateSignal(active.id, { result: "CANCELED", closedAt: Date.now() });
+          updateSignal(current.id, { result: "CANCELED", closedAt: Date.now() });
           activeRef.current = null;
-          setMarkers([]);
+          active = null;
           pushPopup({
             variant: "canceled",
             title: "Proceduralveo3 — Análise Cancelada",
             message: "Recuo detectado antes do fechamento.",
           });
+        } else {
+          const patch: Partial<Signal> = { proceduralConfirmedAt: Date.now() };
+          active = { ...current, ...patch };
+          activeRef.current = active;
+          updateSignal(current.id, patch);
+          pushPopup({
+            variant: "info",
+            title: "Proceduralveo3 Confirmado",
+            message: "Sem recuo nos indicadores selecionados.",
+          });
         }
       }
     }
 
-    // 3) Close signal when its candle has closed
-    if (active && lastClosedTimeRef.current === active.signalCandleStart) {
-      const closedCandle = candles.find((c) => c.time === active.signalCandleStart);
+    if (active?.entryCandleStart && lastClosedTimeRef.current === active.entryCandleStart) {
+      const closedCandle = candles.find((c) => c.time === active?.entryCandleStart);
       if (closedCandle) {
-        const win =
-          active.direction === "UP"
-            ? closedCandle.close > active.entryPrice
-            : closedCandle.close < active.entryPrice;
+        const entryPrice = Number.isFinite(active.entryPrice) ? active.entryPrice : closedCandle.open;
+        const win = active.direction === "UP" ? closedCandle.close > entryPrice : closedCandle.close < entryPrice;
         const result = win ? "WIN" : "LOSS";
-        updateSignal(active.id, { result, exitPrice: closedCandle.close, closedAt: Date.now() });
+        updateSignal(active.id, { result, entryPrice, exitPrice: closedCandle.close, closedAt: Date.now() });
         pushPopup({
           variant: win ? "win" : "loss",
           title: win ? "WIN ✓" : "LOSS ✗",
-          message: `${active.pair} • ${active.direction === "UP" ? "ALTA" : "BAIXA"}`,
+          message: `${active.pair} • ${active.direction === "UP" ? "CALL" : "PUT"}`,
         });
         activeRef.current = null;
-        setMarkers([]);
+        active = null;
+      }
+    }
+
+    const liveKey = `${config.pair}-${config.timeframe}-${liveCandle.time}`;
+    if (!activeRef.current && !proceduralRanRef.current.has(`gen-${liveKey}`)) {
+      const cr = detectCrossings(candles, config.indicators);
+      const decision = signalDecision(cr, readIndicatorDirection(snapshot, candles.length - 1));
+      if (decision) {
+        proceduralRanRef.current.add(`gen-${liveKey}`);
+        const entryCandleStart = liveCandle.time + tfSec;
+        const entryCandle = candles.find((c) => c.time === entryCandleStart);
+        const sig: Signal = {
+          id: `${Date.now()}`,
+          pair: config.pair,
+          timeframe: config.timeframe,
+          direction: decision.direction,
+          confidence: decision.confidence,
+          signalCandleStart: liveCandle.time,
+          entryCandleStart,
+          entryPrice: entryCandle?.open ?? Number.NaN,
+          result: "PENDING",
+          createdAt: Date.now(),
+        };
+        activeRef.current = sig;
+        addSignal(sig);
+        setMarkers((prevMarkers) => [
+          ...prevMarkers,
+          signalMarker(sig, liveCandle),
+        ].slice(-80));
+        pushPopup({
+          variant: "signal",
+          title: `Sinal Gerado — ${sig.direction === "UP" ? "CALL" : "PUT"} (${sig.confidence}%)`,
+          message: `${sig.pair} • ${sig.timeframe} • entrada na próxima vela`,
+        });
       }
     }
   }, [candles, whaleActive, config, addSignal, updateSignal]);
@@ -181,13 +182,46 @@ function Dashboard() {
     return { wins, losses: closed.length - wins, acc };
   }, [history]);
 
+  const lineValues = useMemo(() => {
+    if (!candles.length) return null;
+    const s = computeAll(candles, config.indicators);
+    const i = candles.length - 1;
+    return {
+      ma: [
+        { name: `MA${config.indicators.ma.short}`, value: s.maShort[i], color: config.indicators.ma.colorShort },
+        { name: `MA${config.indicators.ma.mid}`, value: s.maMid[i], color: config.indicators.ma.colorMid },
+        { name: `MA${config.indicators.ma.long}`, value: s.maLong[i], color: config.indicators.ma.colorLong },
+      ],
+      macd: [
+        { name: "MACD", value: s.macdLine[i], color: config.indicators.macd.colorLine },
+        { name: "Signal", value: s.macdSig[i], color: config.indicators.macd.colorSignal },
+      ],
+      stoch: [
+        { name: "%K", value: s.stochK[i], color: config.indicators.stochRsi.colorK },
+        { name: "%D", value: s.stochD[i], color: config.indicators.stochRsi.colorD },
+      ],
+    };
+  }, [candles, config.indicators]);
+
   return (
-    <div className="flex flex-col gap-4 animate-fade-up">
+    <div className="flex flex-col gap-3 animate-fade-up">
+      <div className="binance-panel rounded-lg p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-xs text-muted-foreground">Spot Signal</div>
+            <div className="font-display text-2xl font-bold text-primary">{config.pair}</div>
+          </div>
+          <div className="text-right">
+            <div className={`font-display text-2xl font-bold ${change >= 0 ? "text-[color:var(--win)]" : "text-[color:var(--loss)]"}`}>{last ? last.close.toFixed(2) : "—"}</div>
+            <div className={`text-xs ${change >= 0 ? "text-[color:var(--win)]" : "text-[color:var(--loss)]"}`}>{change >= 0 ? "+" : ""}{change.toFixed(2)}%</div>
+          </div>
+        </div>
+      </div>
       <div className="flex gap-2">
         <select
           value={config.pair}
           onChange={(e) => setConfig({ pair: e.target.value })}
-          className="flex-1 rounded-xl glass-card px-3 py-2 text-sm font-medium"
+          className="flex-1 rounded-lg binance-panel px-3 py-2 text-sm font-medium outline-none focus:ring-1 focus:ring-primary"
         >
           {PAIRS.map((p) => (
             <option key={p} value={p}>
@@ -198,7 +232,7 @@ function Dashboard() {
         <select
           value={config.timeframe}
           onChange={(e) => setConfig({ timeframe: e.target.value })}
-          className="rounded-xl glass-card px-3 py-2 text-sm font-medium"
+          className="rounded-lg binance-panel px-3 py-2 text-sm font-medium outline-none focus:ring-1 focus:ring-primary"
         >
           {TIMEFRAMES.map((t) => (
             <option key={t} value={t}>
@@ -214,6 +248,13 @@ function Dashboard() {
         <IndicatorCard label="Preço" value={last ? last.close.toFixed(2) : "—"} sub={`${change >= 0 ? "+" : ""}${change.toFixed(2)}%`} positive={change >= 0} />
         <IndicatorCard label="Assertividade" value={`${stats.acc}%`} sub={`${stats.wins}W / ${stats.losses}L`} positive={stats.acc >= 60} />
       </div>
+      {lineValues ? (
+        <div className="grid gap-2 sm:grid-cols-3">
+          <LineCard title="Médias Móveis" dir={cross.ma} rows={lineValues.ma} />
+          <LineCard title="MACD" dir={cross.macd} rows={lineValues.macd} />
+          <LineCard title="RSI Estocástico" dir={cross.stoch} rows={lineValues.stoch} />
+        </div>
+      ) : null}
       <div className="grid grid-cols-3 gap-2">
         <CrossCard
           label="MA"
@@ -225,13 +266,13 @@ function Dashboard() {
           label="MACD"
           sub={`${config.indicators.macd.fast}/${config.indicators.macd.slow}/${config.indicators.macd.signal}`}
           dir={cross.macd}
-          color={config.indicators.macd.color}
+          color={config.indicators.macd.colorLine}
         />
         <CrossCard
           label="StochRSI"
           sub={`${config.indicators.stochRsi.rsiP}/${config.indicators.stochRsi.stochP}`}
           dir={cross.stoch}
-          color={config.indicators.stochRsi.color}
+          color={config.indicators.stochRsi.colorK}
         />
       </div>
 
@@ -239,7 +280,7 @@ function Dashboard() {
         <button
           onClick={toggleWhale}
           className={`relative grid h-32 w-32 place-items-center rounded-full text-5xl transition ${
-            whaleActive ? "animate-whale-pulse bg-gradient-to-br from-cyan-400/30 to-cyan-700/20 neon-border" : "glass-card"
+            whaleActive ? "animate-whale-pulse bg-primary/15 neon-border text-primary" : "binance-panel hover:border-primary/60"
           }`}
           aria-label="Ativar Baleia"
         >
@@ -255,12 +296,77 @@ function Dashboard() {
 
 function IndicatorCard({ label, value, sub, positive }: { label: string; value: string; sub: string; positive?: boolean }) {
   return (
-    <div className="glass-card rounded-2xl p-3">
+    <div className="binance-panel rounded-lg p-3">
       <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
       <div className="font-display text-lg font-bold mt-1">{value}</div>
       <div className={`text-xs mt-0.5 ${positive ? "text-[color:var(--win)]" : "text-[color:var(--loss)]"}`}>{sub}</div>
     </div>
   );
+}
+
+function LineCard({ title, dir, rows }: { title: string; dir: "UP" | "DOWN" | null; rows: { name: string; value: number | null; color: string }[] }) {
+  const label = dir === "UP" ? "Cruzamento CALL" : dir === "DOWN" ? "Cruzamento PUT" : "Aguardando";
+  return (
+    <div className="binance-panel rounded-lg p-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="font-display text-sm font-bold">{title}</div>
+        <div className={`text-[10px] font-bold uppercase ${dir === "UP" ? "text-[color:var(--win)]" : dir === "DOWN" ? "text-[color:var(--loss)]" : "text-muted-foreground"}`}>{label}</div>
+      </div>
+      <div className="space-y-2">
+        {rows.map((row) => (
+          <div key={row.name} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-xs">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: row.color, boxShadow: `0 0 12px ${row.color}` }} />
+            <span className="text-muted-foreground">{row.name}</span>
+            <span className="font-display font-bold">{formatLineValue(row.value)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatLineValue(value: number | null) {
+  return value === null || !Number.isFinite(value) ? "—" : Math.abs(value) < 1 ? value.toFixed(5) : value.toFixed(2);
+}
+
+function readIndicatorDirection(snapshot: IndicatorSnapshot, index: number): CrossResult {
+  const maBlend = (snapshot.maShort[index] + snapshot.maMid[index]) / 2;
+  const ma = isFinite(maBlend) && isFinite(snapshot.maLong[index])
+    ? maBlend > snapshot.maLong[index] ? "UP" : "DOWN"
+    : null;
+  const macdLine = snapshot.macdLine[index];
+  const macdSig = snapshot.macdSig[index];
+  const macd = macdLine !== null && macdSig !== null ? macdLine > macdSig ? "UP" : "DOWN" : null;
+  const stochK = snapshot.stochK[index];
+  const stochD = snapshot.stochD[index];
+  const stoch = stochK !== null && stochD !== null ? stochK > stochD ? "UP" : "DOWN" : null;
+  return { ma, macd, stoch };
+}
+
+function signalDecision(cross: CrossResult, directions: CrossResult): { direction: Direction; confidence: number } | null {
+  const crossedDirections = [cross.ma, cross.macd, cross.stoch].filter(Boolean) as Direction[];
+  for (const direction of ["UP", "DOWN"] as const) {
+    if (!crossedDirections.includes(direction)) continue;
+    const confirmations = [directions.ma, directions.macd, directions.stoch].filter((d) => d === direction).length;
+    if (confirmations >= 3) return { direction, confidence: 99 };
+    if (confirmations >= 2) return { direction, confidence: 80 };
+  }
+  return null;
+}
+
+function signalMarker(signal: Signal, candle: Candle): SeriesMarker<Time> {
+  const range = Math.max(candle.high - candle.low, Math.abs(candle.close) * 0.001);
+  const isCall = signal.direction === "UP";
+  return {
+    id: signal.id,
+    time: signal.signalCandleStart as Time,
+    position: isCall ? "atPriceBottom" : "atPriceTop",
+    price: isCall ? candle.low - range * 1.35 : candle.high + range * 1.35,
+    color: isCall ? "#02c076" : "#f6465d",
+    shape: isCall ? "arrowUp" : "arrowDown",
+    text: `${isCall ? "CALL" : "PUT"} ${signal.confidence}%`,
+    size: 2,
+  };
 }
 
 function CrossCard({ label, sub, dir, color }: { label: string; sub: string; dir: "UP" | "DOWN" | null; color: string }) {

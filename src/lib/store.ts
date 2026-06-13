@@ -22,8 +22,8 @@ const defaultConfig: AppConfig = {
   procedural: { seconds: 15, checkMA: true, checkMACD: true, checkStochRSI: true },
   indicators: {
     ma: { short: 7, mid: 25, long: 99, colorShort: "#facc15", colorMid: "#22c55e", colorLong: "#ef4444" },
-    macd: { fast: 12, slow: 26, signal: 9, color: "#06b6d4" },
-    stochRsi: { rsiP: 14, stochP: 14, kP: 3, dP: 3, color: "#a855f7" },
+    macd: { fast: 12, slow: 26, signal: 9, colorLine: "#f0b90b", colorSignal: "#7a5cff" },
+    stochRsi: { rsiP: 14, stochP: 14, kP: 3, dP: 3, colorK: "#02c076", colorD: "#f6465d" },
   },
 };
 
@@ -56,9 +56,11 @@ export const useStore = create<State>()(
     }),
     {
       name: "whale-tracker-ai",
-      version: 2,
+      version: 3,
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>;
+        const macd = p.config?.indicators?.macd as Partial<AppConfig["indicators"]["macd"]> & { color?: string } | undefined;
+        const stochRsi = p.config?.indicators?.stochRsi as Partial<AppConfig["indicators"]["stochRsi"]> & { color?: string } | undefined;
         return {
           ...current,
           ...p,
@@ -68,8 +70,18 @@ export const useStore = create<State>()(
             procedural: { ...defaultConfig.procedural, ...(p.config?.procedural ?? {}) },
             indicators: {
               ma: { ...defaultConfig.indicators.ma, ...(p.config?.indicators?.ma ?? {}) },
-              macd: { ...defaultConfig.indicators.macd, ...(p.config?.indicators?.macd ?? {}) },
-              stochRsi: { ...defaultConfig.indicators.stochRsi, ...(p.config?.indicators?.stochRsi ?? {}) },
+              macd: {
+                ...defaultConfig.indicators.macd,
+                ...(macd ?? {}),
+                colorLine: macd?.colorLine ?? macd?.color ?? defaultConfig.indicators.macd.colorLine,
+                colorSignal: macd?.colorSignal ?? defaultConfig.indicators.macd.colorSignal,
+              },
+              stochRsi: {
+                ...defaultConfig.indicators.stochRsi,
+                ...(stochRsi ?? {}),
+                colorK: stochRsi?.colorK ?? stochRsi?.color ?? defaultConfig.indicators.stochRsi.colorK,
+                colorD: stochRsi?.colorD ?? defaultConfig.indicators.stochRsi.colorD,
+              },
             },
           },
         };

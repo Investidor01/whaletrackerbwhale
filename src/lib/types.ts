@@ -16,10 +16,13 @@ export interface Signal {
   direction: Direction;
   confidence: number; // 85 or 99
   signalCandleStart: number; // seconds
+  entryCandleStart?: number; // seconds
   entryPrice: number;
   exitPrice?: number;
   result: SignalResult;
   createdAt: number;
+  proceduralConfirmedAt?: number;
+  startedAt?: number;
   closedAt?: number;
 }
 
@@ -34,7 +37,7 @@ export interface AppConfig {
   };
   indicators: {
     ma: { short: number; mid: number; long: number; colorShort: string; colorMid: string; colorLong: string };
-    macd: { fast: number; slow: number; signal: number; color: string };
-    stochRsi: { rsiP: number; stochP: number; kP: number; dP: number; color: string };
+    macd: { fast: number; slow: number; signal: number; colorLine: string; colorSignal: string };
+    stochRsi: { rsiP: number; stochP: number; kP: number; dP: number; colorK: string; colorD: string };
   };
 }
