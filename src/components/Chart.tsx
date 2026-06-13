@@ -46,7 +46,7 @@ export function Chart({ candles, markers }: Props) {
       wickUpColor: "#10d39a",
       wickDownColor: "#ef4444",
     });
-    markersRef.current = createSeriesMarkers<Time>(seriesRef.current!, []);
+    markersRef.current = createSeriesMarkers<Time>(seriesRef.current!, [], { autoScale: true, zOrder: "top" });
     return () => chart.remove();
   }, []);
 
@@ -59,5 +59,5 @@ export function Chart({ candles, markers }: Props) {
     markersRef.current?.setMarkers(markers);
   }, [markers]);
 
-  return <div ref={ref} className="h-[360px] w-full rounded-2xl glass-card overflow-hidden" />;
+  return <div ref={ref} className="h-[390px] w-full rounded-lg binance-panel overflow-hidden" />;
 }
