@@ -85,9 +85,10 @@ function Dashboard() {
     }
 
     if (active?.entryCandleStart && active.startedAt && active.result === "PENDING") {
+      const current = active;
       const entryCandle = candles.find((c) => c.time === active?.entryCandleStart);
-      const remaining = active.entryCandleStart + tfSec - Math.floor(Date.now() / 1000);
-      const procKey = `proc-${active.id}`;
+      const remaining = current.entryCandleStart + tfSec - Math.floor(Date.now() / 1000);
+      const procKey = `proc-${current.id}`;
       if (entryCandle && remaining <= config.procedural.seconds && remaining > 0 && !proceduralRanRef.current.has(procKey)) {
         proceduralRanRef.current.add(procKey);
         const cr = detectCrossings(candles, config.indicators);
@@ -95,9 +96,9 @@ function Dashboard() {
         if (config.procedural.checkMA) checks.push(cr.ma);
         if (config.procedural.checkMACD) checks.push(cr.macd);
         if (config.procedural.checkStochRSI) checks.push(cr.stoch);
-        const recoil = checks.some((d) => d && d !== active.direction);
+        const recoil = checks.some((d) => d && d !== current.direction);
         if (recoil) {
-          updateSignal(active.id, { result: "CANCELED", closedAt: Date.now() });
+          updateSignal(current.id, { result: "CANCELED", closedAt: Date.now() });
           activeRef.current = null;
           active = null;
           pushPopup({
@@ -107,9 +108,9 @@ function Dashboard() {
           });
         } else {
           const patch: Partial<Signal> = { proceduralConfirmedAt: Date.now() };
-          active = { ...active, ...patch };
+          active = { ...current, ...patch };
           activeRef.current = active;
-          updateSignal(active.id, patch);
+          updateSignal(current.id, patch);
           pushPopup({
             variant: "info",
             title: "Proceduralveo3 Confirmado",
@@ -230,13 +231,13 @@ function Dashboard() {
           label="MACD"
           sub={`${config.indicators.macd.fast}/${config.indicators.macd.slow}/${config.indicators.macd.signal}`}
           dir={cross.macd}
-          color={config.indicators.macd.color}
+          color={config.indicators.macd.colorLine}
         />
         <CrossCard
           label="StochRSI"
           sub={`${config.indicators.stochRsi.rsiP}/${config.indicators.stochRsi.stochP}`}
           dir={cross.stoch}
-          color={config.indicators.stochRsi.color}
+          color={config.indicators.stochRsi.colorK}
         />
       </div>
 
