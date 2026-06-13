@@ -188,13 +188,46 @@ function Dashboard() {
     return { wins, losses: closed.length - wins, acc };
   }, [history]);
 
+  const lineValues = useMemo(() => {
+    if (!candles.length) return null;
+    const s = computeAll(candles, config.indicators);
+    const i = candles.length - 1;
+    return {
+      ma: [
+        { name: `MA${config.indicators.ma.short}`, value: s.maShort[i], color: config.indicators.ma.colorShort },
+        { name: `MA${config.indicators.ma.mid}`, value: s.maMid[i], color: config.indicators.ma.colorMid },
+        { name: `MA${config.indicators.ma.long}`, value: s.maLong[i], color: config.indicators.ma.colorLong },
+      ],
+      macd: [
+        { name: "MACD", value: s.macdLine[i], color: config.indicators.macd.colorLine },
+        { name: "Signal", value: s.macdSig[i], color: config.indicators.macd.colorSignal },
+      ],
+      stoch: [
+        { name: "%K", value: s.stochK[i], color: config.indicators.stochRsi.colorK },
+        { name: "%D", value: s.stochD[i], color: config.indicators.stochRsi.colorD },
+      ],
+    };
+  }, [candles, config.indicators]);
+
   return (
-    <div className="flex flex-col gap-4 animate-fade-up">
+    <div className="flex flex-col gap-3 animate-fade-up">
+      <div className="binance-panel rounded-lg p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-xs text-muted-foreground">Spot Signal</div>
+            <div className="font-display text-2xl font-bold text-primary">{config.pair}</div>
+          </div>
+          <div className="text-right">
+            <div className={`font-display text-2xl font-bold ${change >= 0 ? "text-[color:var(--win)]" : "text-[color:var(--loss)]"}`}>{last ? last.close.toFixed(2) : "—"}</div>
+            <div className={`text-xs ${change >= 0 ? "text-[color:var(--win)]" : "text-[color:var(--loss)]"}`}>{change >= 0 ? "+" : ""}{change.toFixed(2)}%</div>
+          </div>
+        </div>
+      </div>
       <div className="flex gap-2">
         <select
           value={config.pair}
           onChange={(e) => setConfig({ pair: e.target.value })}
-          className="flex-1 rounded-xl glass-card px-3 py-2 text-sm font-medium"
+          className="flex-1 rounded-lg binance-panel px-3 py-2 text-sm font-medium outline-none focus:ring-1 focus:ring-primary"
         >
           {PAIRS.map((p) => (
             <option key={p} value={p}>
@@ -205,7 +238,7 @@ function Dashboard() {
         <select
           value={config.timeframe}
           onChange={(e) => setConfig({ timeframe: e.target.value })}
-          className="rounded-xl glass-card px-3 py-2 text-sm font-medium"
+          className="rounded-lg binance-panel px-3 py-2 text-sm font-medium outline-none focus:ring-1 focus:ring-primary"
         >
           {TIMEFRAMES.map((t) => (
             <option key={t} value={t}>
@@ -221,6 +254,13 @@ function Dashboard() {
         <IndicatorCard label="Preço" value={last ? last.close.toFixed(2) : "—"} sub={`${change >= 0 ? "+" : ""}${change.toFixed(2)}%`} positive={change >= 0} />
         <IndicatorCard label="Assertividade" value={`${stats.acc}%`} sub={`${stats.wins}W / ${stats.losses}L`} positive={stats.acc >= 60} />
       </div>
+      {lineValues ? (
+        <div className="grid gap-2 sm:grid-cols-3">
+          <LineCard title="Médias Móveis" dir={cross.ma} rows={lineValues.ma} />
+          <LineCard title="MACD" dir={cross.macd} rows={lineValues.macd} />
+          <LineCard title="RSI Estocástico" dir={cross.stoch} rows={lineValues.stoch} />
+        </div>
+      ) : null}
       <div className="grid grid-cols-3 gap-2">
         <CrossCard
           label="MA"
