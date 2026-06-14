@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useStore } from "./store";
 import { fetchKlines, subscribeKline, tfSeconds } from "./binance";
 import { computeAll, detectCrossings, type CrossResult, type IndicatorSnapshot } from "./indicators";
-import type { Candle, Direction, Signal } from "./types";
+import type { Direction, Signal } from "./types";
 import { pushPopup } from "@/components/Popup";
 
 export function readIndicatorDirection(snapshot: IndicatorSnapshot, index: number): CrossResult {
