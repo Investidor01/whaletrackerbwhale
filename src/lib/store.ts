@@ -1,11 +1,15 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AppConfig, Signal } from "./types";
+import type { AppConfig, Candle, Signal } from "./types";
+import type { CrossResult } from "./indicators";
 
 interface State {
   config: AppConfig;
   history: Signal[];
   whaleActive: boolean;
+  activeSignalId: string | null;
+  candles: Candle[];
+  cross: CrossResult;
   setConfig: (c: Partial<AppConfig>) => void;
   setProcedural: (p: Partial<AppConfig["procedural"]>) => void;
   setIndicators: (i: Partial<AppConfig["indicators"]>) => void;
@@ -14,6 +18,9 @@ interface State {
   clearHistory: () => void;
   toggleWhale: () => void;
   setWhale: (v: boolean) => void;
+  setCandles: (c: Candle[] | ((prev: Candle[]) => Candle[])) => void;
+  setCross: (c: CrossResult) => void;
+  setActiveSignal: (id: string | null) => void;
 }
 
 const defaultConfig: AppConfig = {
@@ -33,6 +40,9 @@ export const useStore = create<State>()(
       config: defaultConfig,
       history: [],
       whaleActive: false,
+      activeSignalId: null,
+      candles: [],
+      cross: { ma: null, macd: null, stoch: null },
       setConfig: (c) => set((s) => ({ config: { ...s.config, ...c } })),
       setProcedural: (p) =>
         set((s) => ({ config: { ...s.config, procedural: { ...s.config.procedural, ...p } } })),
@@ -53,10 +63,20 @@ export const useStore = create<State>()(
       clearHistory: () => set({ history: [] }),
       toggleWhale: () => set((s) => ({ whaleActive: !s.whaleActive })),
       setWhale: (v) => set({ whaleActive: v }),
+      setCandles: (c) =>
+        set((s) => ({ candles: typeof c === "function" ? (c as (p: Candle[]) => Candle[])(s.candles) : c })),
+      setCross: (c) => set({ cross: c }),
+      setActiveSignal: (id) => set({ activeSignalId: id }),
     }),
     {
       name: "whale-tracker-ai",
-      version: 3,
+      version: 4,
+      partialize: (s) => ({
+        config: s.config,
+        history: s.history,
+        whaleActive: s.whaleActive,
+        activeSignalId: s.activeSignalId,
+      }) as Partial<State>,
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>;
         const macd = p.config?.indicators?.macd as Partial<AppConfig["indicators"]["macd"]> & { color?: string } | undefined;
