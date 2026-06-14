@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Menu, X, Home, History, ShieldCheck, Users, BarChart3, Settings, Info } from "lucide-react";
+import { useSignalEngine } from "@/lib/useSignalEngine";
+import { useStore } from "@/lib/store";
+import { pushPopup } from "@/components/Popup";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: Home },
@@ -14,6 +17,28 @@ const NAV = [
 
 export function Layout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  useSignalEngine();
+  const whaleActive = useStore((s) => s.whaleActive);
+  const firstWhale = useRef(true);
+  useEffect(() => {
+    if (firstWhale.current) {
+      firstWhale.current = false;
+      return;
+    }
+    if (whaleActive) {
+      pushPopup({
+        variant: "signal",
+        title: "ANALISANDO BALEIAS NO MERCADO",
+        message: "Whale Tracker AI ativado — rastreando fluxo.",
+      });
+    } else {
+      pushPopup({
+        variant: "info",
+        title: "Análise pausada",
+        message: "Whale Tracker AI desativado.",
+      });
+    }
+  }, [whaleActive]);
   return (
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-30 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/95 px-4 py-3 shadow-[0_8px_24px_oklch(0_0_0/0.28)]">
