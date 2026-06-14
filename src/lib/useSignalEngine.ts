@@ -50,13 +50,20 @@ export function useSignalEngine() {
   // Load history candles on pair/tf change
   useEffect(() => {
     let alive = true;
+    // If active signal is on a different pair/tf, cancel it so it doesn't dangle
+    const st = useStore.getState();
+    const a = st.activeSignalId ? st.history.find((h) => h.id === st.activeSignalId) : null;
+    if (a && a.result === "PENDING" && (a.pair !== config.pair || a.timeframe !== config.timeframe)) {
+      updateSignal(a.id, { result: "CANCELED", closedAt: Date.now(), notifiedResult: true });
+      setActiveSignal(null);
+    }
     fetchKlines(config.pair, config.timeframe).then((c) => {
       if (alive) setCandles(c);
     });
     return () => {
       alive = false;
     };
-  }, [config.pair, config.timeframe, setCandles]);
+  }, [config.pair, config.timeframe, setCandles, updateSignal, setActiveSignal]);
 
   // WebSocket stream
   useEffect(() => {
