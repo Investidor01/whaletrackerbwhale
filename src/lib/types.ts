@@ -24,6 +24,10 @@ export interface Signal {
   proceduralConfirmedAt?: number;
   startedAt?: number;
   closedAt?: number;
+  notifiedSignal?: boolean;
+  notifiedProcedural?: boolean;
+  notifiedStarted?: boolean;
+  notifiedResult?: boolean;
 }
 
 export interface AppConfig {
