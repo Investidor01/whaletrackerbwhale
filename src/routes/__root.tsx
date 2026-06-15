@@ -89,6 +89,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Rastreador de baleias e sinais cripto em tempo real." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Whale Tracker AI" },
+      { name: "twitter:description", content: "Rastreador de baleias e sinais cripto em tempo real." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a67c0571-c327-43f2-a021-25a3c0a9b14e/id-preview-66491821--8bfd4f2a-3abd-4a02-a717-5fc4f2b172b2.lovable.app-1781499943661.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a67c0571-c327-43f2-a021-25a3c0a9b14e/id-preview-66491821--8bfd4f2a-3abd-4a02-a717-5fc4f2b172b2.lovable.app-1781499943661.png" },
     ],
     links: [
       {
