@@ -5,6 +5,14 @@ import { computeAll, detectCrossings, type CrossResult, type IndicatorSnapshot }
 import type { Direction, Signal } from "./types";
 import { pushPopup } from "@/components/Popup";
 
+// Session-scoped dedupe so navigation / HMR remounts cannot replay popups
+const shownPopups = new Set<string>();
+function popupOnce(key: string, payload: Parameters<typeof pushPopup>[0]) {
+  if (shownPopups.has(key)) return;
+  shownPopups.add(key);
+  pushPopup(payload);
+}
+
 export function readIndicatorDirection(snapshot: IndicatorSnapshot, index: number): CrossResult {
   const maBlend = (snapshot.maShort[index] + snapshot.maMid[index]) / 2;
   const ma = isFinite(maBlend) && isFinite(snapshot.maLong[index])
@@ -19,13 +27,41 @@ export function readIndicatorDirection(snapshot: IndicatorSnapshot, index: numbe
   return { ma, macd, stoch };
 }
 
-export function signalDecision(cross: CrossResult, directions: CrossResult): { direction: Direction; confidence: number } | null {
-  const crossedDirections = [cross.ma, cross.macd, cross.stoch].filter(Boolean) as Direction[];
-  for (const direction of ["UP", "DOWN"] as const) {
-    if (!crossedDirections.includes(direction)) continue;
-    const confirmations = [directions.ma, directions.macd, directions.stoch].filter((d) => d === direction).length;
-    if (confirmations >= 3) return { direction, confidence: 99 };
-    if (confirmations >= 2) return { direction, confidence: 80 };
+export function signalDecision(
+  cross: CrossResult,
+  directions: CrossResult,
+  opts: {
+    allow80: boolean;
+    allow99: boolean;
+    veo5Enabled: boolean;
+    veo5: { requireMA: boolean; requireMACD: boolean; requireStochRSI: boolean };
+  },
+): { direction: Direction; confidence: number } | null {
+  // MA cross is mandatory for any signal (liquidity-of-whales rule).
+  if (!cross.ma) return null;
+  const dir = cross.ma;
+
+  const maAligned = directions.ma === dir;
+  const macdAligned = cross.macd === dir && directions.macd === dir;
+  const stochAligned = cross.stoch === dir && directions.stoch === dir;
+
+  // Proceduralveo5 — custom liquidity gate. Selected indicators MUST all cross
+  // simultaneously in the same direction; otherwise no signal at all.
+  if (opts.veo5Enabled) {
+    if (opts.veo5.requireMA && !(cross.ma === dir && maAligned)) return null;
+    if (opts.veo5.requireMACD && !macdAligned) return null;
+    if (opts.veo5.requireStochRSI && !stochAligned) return null;
+  }
+
+  // Assertivity rule: MA+MACD => 80%, MA+MACD+StochRSI => 99%.
+  if (maAligned && macdAligned && stochAligned) {
+    if (opts.allow99) return { direction: dir, confidence: 99 };
+    if (opts.allow80) return { direction: dir, confidence: 80 };
+    return null;
+  }
+  if (maAligned && macdAligned) {
+    if (opts.allow80) return { direction: dir, confidence: 80 };
+    return null;
   }
   return null;
 }
@@ -108,7 +144,7 @@ export function useSignalEngine() {
           notifiedStarted: true,
         });
         if (!active.notifiedStarted) {
-          pushPopup({
+          popupOnce(`started:${active.id}`, {
             variant: "started",
             title: "Vela iniciada",
             message: `Entrada ${active.direction === "UP" ? "CALL" : "PUT"} • ${active.pair} ${active.timeframe}`,
@@ -130,7 +166,7 @@ export function useSignalEngine() {
         if (recoil) {
           updateSignal(active.id, { result: "CANCELED", closedAt: Date.now(), notifiedResult: true });
           setActiveSignal(null);
-          pushPopup({
+          popupOnce(`canceled:${active.id}`, {
             variant: "canceled",
             title: "Proceduralveo3 — Cancelado",
             message: "Recuo detectado antes do fechamento.",
@@ -138,7 +174,7 @@ export function useSignalEngine() {
           return;
         } else {
           updateSignal(active.id, { proceduralConfirmedAt: Date.now(), notifiedProcedural: true });
-          pushPopup({
+          popupOnce(`veo3:${active.id}`, {
             variant: "info",
             title: "Proceduralveo3 Confirmado",
             message: "Sinal aprovado para entrada.",
@@ -163,7 +199,7 @@ export function useSignalEngine() {
           notifiedResult: true,
         });
         setActiveSignal(null);
-        pushPopup({
+        popupOnce(`result:${active.id}`, {
           variant: win ? "win" : "loss",
           title: win ? "WIN ✓" : "LOSS ✗",
           message: `${active.pair} • ${active.direction === "UP" ? "CALL" : "PUT"}`,
@@ -175,7 +211,16 @@ export function useSignalEngine() {
     // 4. Generate new signal (only if no active signal & whale on)
     if (!active && whaleActive) {
       const cr = detectCrossings(candles, config.indicators);
-      const decision = signalDecision(cr, liveDir);
+      const decision = signalDecision(cr, liveDir, {
+        allow80: config.proceduralveo4.allow80,
+        allow99: config.proceduralveo4.allow99,
+        veo5Enabled: config.proceduralveo5.enabled,
+        veo5: {
+          requireMA: config.proceduralveo5.requireMA,
+          requireMACD: config.proceduralveo5.requireMACD,
+          requireStochRSI: config.proceduralveo5.requireStochRSI,
+        },
+      });
       if (decision) {
         const entryCandleStart = liveCandle.time + tfSec;
         const sig: Signal = {
@@ -193,7 +238,7 @@ export function useSignalEngine() {
         };
         addSignal(sig);
         setActiveSignal(sig.id);
-        pushPopup({
+        popupOnce(`signal:${sig.id}`, {
           variant: "signal",
           title: `Sinal Gerado — ${sig.direction === "UP" ? "CALL" : "PUT"} (${sig.confidence}%)`,
           message: `${sig.pair} • ${sig.timeframe} • entrada na próxima vela`,
