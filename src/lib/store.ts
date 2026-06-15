@@ -27,6 +27,8 @@ const defaultConfig: AppConfig = {
   pair: "BTCUSDT",
   timeframe: "1m",
   procedural: { seconds: 15, checkMA: true, checkMACD: true, checkStochRSI: true },
+  proceduralveo4: { allow80: true, allow99: true },
+  proceduralveo5: { enabled: false, requireMA: true, requireMACD: true, requireStochRSI: false },
   indicators: {
     ma: { short: 7, mid: 25, long: 99, colorShort: "#facc15", colorMid: "#22c55e", colorLong: "#ef4444" },
     macd: { fast: 12, slow: 26, signal: 9, colorLine: "#f0b90b", colorSignal: "#7a5cff" },
@@ -46,6 +48,10 @@ export const useStore = create<State>()(
       setConfig: (c) => set((s) => ({ config: { ...s.config, ...c } })),
       setProcedural: (p) =>
         set((s) => ({ config: { ...s.config, procedural: { ...s.config.procedural, ...p } } })),
+      setProceduralveo4: (p) =>
+        set((s) => ({ config: { ...s.config, proceduralveo4: { ...s.config.proceduralveo4, ...p } } })),
+      setProceduralveo5: (p) =>
+        set((s) => ({ config: { ...s.config, proceduralveo5: { ...s.config.proceduralveo5, ...p } } })),
       setIndicators: (i) =>
         set((s) => ({
           config: {
