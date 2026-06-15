@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SobreRouteImport } from './routes/sobre'
+import { Route as Proceduralveo5RouteImport } from './routes/proceduralveo5'
 import { Route as Proceduralveo4RouteImport } from './routes/proceduralveo4'
 import { Route as Proceduralveo3RouteImport } from './routes/proceduralveo3'
 import { Route as HistoricoRouteImport } from './routes/historico'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Proceduralveo5Route = Proceduralveo5RouteImport.update({
+  id: '/proceduralveo5',
+  path: '/proceduralveo5',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Proceduralveo4Route = Proceduralveo4RouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
   '/proceduralveo4': typeof Proceduralveo4Route
+  '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
   '/proceduralveo4': typeof Proceduralveo4Route
+  '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
   '/proceduralveo4': typeof Proceduralveo4Route
+  '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/proceduralveo3'
     | '/proceduralveo4'
+    | '/proceduralveo5'
     | '/sobre'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/proceduralveo3'
     | '/proceduralveo4'
+    | '/proceduralveo5'
     | '/sobre'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/proceduralveo3'
     | '/proceduralveo4'
+    | '/proceduralveo5'
     | '/sobre'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   HistoricoRoute: typeof HistoricoRoute
   Proceduralveo3Route: typeof Proceduralveo3Route
   Proceduralveo4Route: typeof Proceduralveo4Route
+  Proceduralveo5Route: typeof Proceduralveo5Route
   SobreRoute: typeof SobreRoute
 }
 
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/sobre'
       fullPath: '/sobre'
       preLoaderRoute: typeof SobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proceduralveo5': {
+      id: '/proceduralveo5'
+      path: '/proceduralveo5'
+      fullPath: '/proceduralveo5'
+      preLoaderRoute: typeof Proceduralveo5RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/proceduralveo4': {
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoricoRoute: HistoricoRoute,
   Proceduralveo3Route: Proceduralveo3Route,
   Proceduralveo4Route: Proceduralveo4Route,
+  Proceduralveo5Route: Proceduralveo5Route,
   SobreRoute: SobreRoute,
 }
 export const routeTree = rootRouteImport
