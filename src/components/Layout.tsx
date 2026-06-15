@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Menu, X, Home, History, ShieldCheck, Users, BarChart3, Settings, Info } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Menu, X, Home, History, ShieldCheck, ShieldAlert, Sparkles, Users, BarChart3, Settings, Info } from "lucide-react";
 import { useSignalEngine } from "@/lib/useSignalEngine";
 import { useStore } from "@/lib/store";
 import { pushPopup } from "@/components/Popup";
@@ -9,28 +9,43 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: Home },
   { to: "/historico", label: "Histórico", icon: History },
   { to: "/proceduralveo3", label: "Proceduralveo3", icon: ShieldCheck },
+  { to: "/proceduralveo4", label: "Proceduralveo4", icon: Sparkles },
+  { to: "/proceduralveo5", label: "Proceduralveo5", icon: ShieldAlert },
   { to: "/analises-futuro", label: "Análises do Futuro", icon: Users },
   { to: "/estatisticas", label: "Estatísticas", icon: BarChart3 },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
   { to: "/sobre", label: "Sobre", icon: Info },
 ] as const;
 
+// Module-level cache so the whale-toggle popup never replays on
+// HMR/route remounts — only on actual user toggle.
+let lastSeenWhale: boolean | null = null;
+
 export function Layout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   useSignalEngine();
   const whaleActive = useStore((s) => s.whaleActive);
-  const firstWhale = useRef(true);
+  const veo5Enabled = useStore((s) => s.config.proceduralveo5.enabled);
   useEffect(() => {
-    if (firstWhale.current) {
-      firstWhale.current = false;
+    if (lastSeenWhale === whaleActive) return;
+    if (lastSeenWhale === null) {
+      lastSeenWhale = whaleActive;
       return;
     }
+    lastSeenWhale = whaleActive;
     if (whaleActive) {
       pushPopup({
         variant: "signal",
         title: "ANALISANDO BALEIAS NO MERCADO",
         message: "Whale Tracker AI ativado — rastreando fluxo.",
       });
+      if (veo5Enabled) {
+        pushPopup({
+          variant: "info",
+          title: "Proceduralveo5 Analisando Liquidez Baleias",
+          message: "Confirmando cruzamentos selecionados em tempo real.",
+        });
+      }
     } else {
       pushPopup({
         variant: "info",
@@ -38,7 +53,7 @@ export function Layout({ children }: { children: ReactNode }) {
         message: "Whale Tracker AI desativado.",
       });
     }
-  }, [whaleActive]);
+  }, [whaleActive, veo5Enabled]);
   return (
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-30 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/95 px-4 py-3 shadow-[0_8px_24px_oklch(0_0_0/0.28)]">

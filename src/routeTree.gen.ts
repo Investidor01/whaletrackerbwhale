@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SobreRouteImport } from './routes/sobre'
+import { Route as Proceduralveo5RouteImport } from './routes/proceduralveo5'
+import { Route as Proceduralveo4RouteImport } from './routes/proceduralveo4'
 import { Route as Proceduralveo3RouteImport } from './routes/proceduralveo3'
 import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as EstatisticasRouteImport } from './routes/estatisticas'
@@ -20,6 +22,16 @@ import { Route as IndexRouteImport } from './routes/index'
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Proceduralveo5Route = Proceduralveo5RouteImport.update({
+  id: '/proceduralveo5',
+  path: '/proceduralveo5',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Proceduralveo4Route = Proceduralveo4RouteImport.update({
+  id: '/proceduralveo4',
+  path: '/proceduralveo4',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Proceduralveo3Route = Proceduralveo3RouteImport.update({
@@ -60,6 +72,8 @@ export interface FileRoutesByFullPath {
   '/estatisticas': typeof EstatisticasRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
+  '/proceduralveo4': typeof Proceduralveo4Route
+  '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +83,8 @@ export interface FileRoutesByTo {
   '/estatisticas': typeof EstatisticasRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
+  '/proceduralveo4': typeof Proceduralveo4Route
+  '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
 }
 export interface FileRoutesById {
@@ -79,6 +95,8 @@ export interface FileRoutesById {
   '/estatisticas': typeof EstatisticasRoute
   '/historico': typeof HistoricoRoute
   '/proceduralveo3': typeof Proceduralveo3Route
+  '/proceduralveo4': typeof Proceduralveo4Route
+  '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +108,8 @@ export interface FileRouteTypes {
     | '/estatisticas'
     | '/historico'
     | '/proceduralveo3'
+    | '/proceduralveo4'
+    | '/proceduralveo5'
     | '/sobre'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +119,8 @@ export interface FileRouteTypes {
     | '/estatisticas'
     | '/historico'
     | '/proceduralveo3'
+    | '/proceduralveo4'
+    | '/proceduralveo5'
     | '/sobre'
   id:
     | '__root__'
@@ -108,6 +130,8 @@ export interface FileRouteTypes {
     | '/estatisticas'
     | '/historico'
     | '/proceduralveo3'
+    | '/proceduralveo4'
+    | '/proceduralveo5'
     | '/sobre'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +142,8 @@ export interface RootRouteChildren {
   EstatisticasRoute: typeof EstatisticasRoute
   HistoricoRoute: typeof HistoricoRoute
   Proceduralveo3Route: typeof Proceduralveo3Route
+  Proceduralveo4Route: typeof Proceduralveo4Route
+  Proceduralveo5Route: typeof Proceduralveo5Route
   SobreRoute: typeof SobreRoute
 }
 
@@ -128,6 +154,20 @@ declare module '@tanstack/react-router' {
       path: '/sobre'
       fullPath: '/sobre'
       preLoaderRoute: typeof SobreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proceduralveo5': {
+      id: '/proceduralveo5'
+      path: '/proceduralveo5'
+      fullPath: '/proceduralveo5'
+      preLoaderRoute: typeof Proceduralveo5RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proceduralveo4': {
+      id: '/proceduralveo4'
+      path: '/proceduralveo4'
+      fullPath: '/proceduralveo4'
+      preLoaderRoute: typeof Proceduralveo4RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/proceduralveo3': {
@@ -182,6 +222,8 @@ const rootRouteChildren: RootRouteChildren = {
   EstatisticasRoute: EstatisticasRoute,
   HistoricoRoute: HistoricoRoute,
   Proceduralveo3Route: Proceduralveo3Route,
+  Proceduralveo4Route: Proceduralveo4Route,
+  Proceduralveo5Route: Proceduralveo5Route,
   SobreRoute: SobreRoute,
 }
 export const routeTree = rootRouteImport

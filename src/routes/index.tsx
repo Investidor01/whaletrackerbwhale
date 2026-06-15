@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Time, SeriesMarker } from "lightweight-charts";
 import { Chart } from "@/components/Chart";
 import { IndicatorChart, type IndicatorLine } from "@/components/IndicatorChart";
-import { PAIRS, TIMEFRAMES } from "@/lib/binance";
+import { PAIRS, TIMEFRAMES, tfSeconds } from "@/lib/binance";
 import { computeAll } from "@/lib/indicators";
 import type { Candle, Signal } from "@/lib/types";
 import { useStore } from "@/lib/store";
@@ -50,6 +50,16 @@ function Dashboard() {
   const prev = candles[candles.length - 2];
   const change = last && prev ? ((last.close - prev.close) / prev.close) * 100 : 0;
 
+  const tfSec = tfSeconds(config.timeframe);
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 500);
+    return () => clearInterval(id);
+  }, []);
+  const candleRemaining = last ? Math.max(0, last.time + tfSec - now) : 0;
+  const mm = String(Math.floor(candleRemaining / 60)).padStart(2, "0");
+  const ss = String(candleRemaining % 60).padStart(2, "0");
+
   const stats = useMemo(() => {
     const closed = history.filter((h) => h.result === "WIN" || h.result === "LOSS");
     const wins = history.filter((h) => h.result === "WIN").length;
@@ -94,6 +104,10 @@ function Dashboard() {
           <div>
             <div className="text-xs text-muted-foreground">Spot Signal</div>
             <div className="font-display text-2xl font-bold text-primary">{config.pair}</div>
+            <div className="mt-1 text-[10px] uppercase tracking-wider opacity-60">
+              Vela <span className="text-primary">{config.timeframe}</span> · termina em{" "}
+              <span className="font-mono font-bold text-primary">{mm}:{ss}</span>
+            </div>
           </div>
           <div className="text-right">
             <div className={`font-display text-2xl font-bold ${change >= 0 ? "text-[color:var(--win)]" : "text-[color:var(--loss)]"}`}>{last ? last.close.toFixed(2) : "—"}</div>

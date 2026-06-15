@@ -12,6 +12,8 @@ interface State {
   cross: CrossResult;
   setConfig: (c: Partial<AppConfig>) => void;
   setProcedural: (p: Partial<AppConfig["procedural"]>) => void;
+  setProceduralveo4: (p: Partial<AppConfig["proceduralveo4"]>) => void;
+  setProceduralveo5: (p: Partial<AppConfig["proceduralveo5"]>) => void;
   setIndicators: (i: Partial<AppConfig["indicators"]>) => void;
   addSignal: (s: Signal) => void;
   updateSignal: (id: string, patch: Partial<Signal>) => void;
@@ -27,6 +29,8 @@ const defaultConfig: AppConfig = {
   pair: "BTCUSDT",
   timeframe: "1m",
   procedural: { seconds: 15, checkMA: true, checkMACD: true, checkStochRSI: true },
+  proceduralveo4: { allow80: true, allow99: true },
+  proceduralveo5: { enabled: false, requireMA: true, requireMACD: true, requireStochRSI: false },
   indicators: {
     ma: { short: 7, mid: 25, long: 99, colorShort: "#facc15", colorMid: "#22c55e", colorLong: "#ef4444" },
     macd: { fast: 12, slow: 26, signal: 9, colorLine: "#f0b90b", colorSignal: "#7a5cff" },
@@ -46,6 +50,10 @@ export const useStore = create<State>()(
       setConfig: (c) => set((s) => ({ config: { ...s.config, ...c } })),
       setProcedural: (p) =>
         set((s) => ({ config: { ...s.config, procedural: { ...s.config.procedural, ...p } } })),
+      setProceduralveo4: (p) =>
+        set((s) => ({ config: { ...s.config, proceduralveo4: { ...s.config.proceduralveo4, ...p } } })),
+      setProceduralveo5: (p) =>
+        set((s) => ({ config: { ...s.config, proceduralveo5: { ...s.config.proceduralveo5, ...p } } })),
       setIndicators: (i) =>
         set((s) => ({
           config: {
@@ -70,7 +78,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "whale-tracker-ai",
-      version: 4,
+      version: 5,
       partialize: (s) => ({
         config: s.config,
         history: s.history,
@@ -88,6 +96,8 @@ export const useStore = create<State>()(
             ...defaultConfig,
             ...(p.config ?? {}),
             procedural: { ...defaultConfig.procedural, ...(p.config?.procedural ?? {}) },
+            proceduralveo4: { ...defaultConfig.proceduralveo4, ...(p.config?.proceduralveo4 ?? {}) },
+            proceduralveo5: { ...defaultConfig.proceduralveo5, ...(p.config?.proceduralveo5 ?? {}) },
             indicators: {
               ma: { ...defaultConfig.indicators.ma, ...(p.config?.indicators?.ma ?? {}) },
               macd: {
