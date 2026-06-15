@@ -78,7 +78,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "whale-tracker-ai",
-      version: 4,
+      version: 5,
       partialize: (s) => ({
         config: s.config,
         history: s.history,
@@ -96,6 +96,8 @@ export const useStore = create<State>()(
             ...defaultConfig,
             ...(p.config ?? {}),
             procedural: { ...defaultConfig.procedural, ...(p.config?.procedural ?? {}) },
+            proceduralveo4: { ...defaultConfig.proceduralveo4, ...(p.config?.proceduralveo4 ?? {}) },
+            proceduralveo5: { ...defaultConfig.proceduralveo5, ...(p.config?.proceduralveo5 ?? {}) },
             indicators: {
               ma: { ...defaultConfig.indicators.ma, ...(p.config?.indicators?.ma ?? {}) },
               macd: {
