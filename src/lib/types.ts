@@ -39,6 +39,16 @@ export interface AppConfig {
     checkMACD: boolean;
     checkStochRSI: boolean;
   };
+  proceduralveo4: {
+    allow80: boolean;
+    allow99: boolean;
+  };
+  proceduralveo5: {
+    enabled: boolean;
+    requireMA: boolean;
+    requireMACD: boolean;
+    requireStochRSI: boolean;
+  };
   indicators: {
     ma: { short: number; mid: number; long: number; colorShort: string; colorMid: string; colorLong: string };
     macd: { fast: number; slow: number; signal: number; colorLine: string; colorSignal: string };
