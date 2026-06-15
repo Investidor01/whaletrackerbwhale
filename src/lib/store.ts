@@ -12,6 +12,8 @@ interface State {
   cross: CrossResult;
   setConfig: (c: Partial<AppConfig>) => void;
   setProcedural: (p: Partial<AppConfig["procedural"]>) => void;
+  setProceduralveo4: (p: Partial<AppConfig["proceduralveo4"]>) => void;
+  setProceduralveo5: (p: Partial<AppConfig["proceduralveo5"]>) => void;
   setIndicators: (i: Partial<AppConfig["indicators"]>) => void;
   addSignal: (s: Signal) => void;
   updateSignal: (id: string, patch: Partial<Signal>) => void;
