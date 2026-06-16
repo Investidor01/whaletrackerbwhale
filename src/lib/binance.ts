@@ -6,6 +6,7 @@ const TF_SECONDS: Record<string, number> = {
   "15m": 900,
   "1h": 3600,
   "4h": 14400,
+  "1d": 86400,
 };
 
 export function tfSeconds(tf: string) {
@@ -16,12 +17,13 @@ export async function fetchKlines(pair: string, tf: string, limit = 300): Promis
   const url = `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${tf}&limit=${limit}`;
   const res = await fetch(url);
   const json = (await res.json()) as unknown[];
-  return (json as Array<[number, string, string, string, string, ...unknown[]]>).map((k) => ({
+  return (json as Array<[number, string, string, string, string, string, ...unknown[]]>).map((k) => ({
     time: Math.floor((k[0] as number) / 1000),
     open: parseFloat(k[1] as string),
     high: parseFloat(k[2] as string),
     low: parseFloat(k[3] as string),
     close: parseFloat(k[4] as string),
+    volume: parseFloat(k[5] as string),
   }));
 }
 
@@ -55,6 +57,7 @@ export function subscribeKline(
             high: parseFloat(k.h),
             low: parseFloat(k.l),
             close: parseFloat(k.c),
+            volume: parseFloat(k.v),
           },
           closed: !!k.x,
         });
@@ -77,4 +80,5 @@ export function subscribeKline(
 }
 
 export const PAIRS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "AVAXUSDT"];
-export const TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h"];
+export const TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "1d"];
+export const FIAT_PAIRS = ["EURUSDT", "GBPUSDT", "AUDUSDT", "EURUSDC", "USDCBRL", "USDCTRY"];
