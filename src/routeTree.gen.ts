@@ -9,16 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WhalePlusRouteImport } from './routes/whale-plus'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as Proceduralveo5RouteImport } from './routes/proceduralveo5'
 import { Route as Proceduralveo4RouteImport } from './routes/proceduralveo4'
 import { Route as Proceduralveo3RouteImport } from './routes/proceduralveo3'
+import { Route as MaxWhaleRouteImport } from './routes/max-whale'
 import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as ForexRouteImport } from './routes/forex'
 import { Route as EstatisticasRouteImport } from './routes/estatisticas'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as BacktestRouteImport } from './routes/backtest'
 import { Route as AnalisesFuturoRouteImport } from './routes/analises-futuro'
 import { Route as IndexRouteImport } from './routes/index'
 
+const WhalePlusRoute = WhalePlusRouteImport.update({
+  id: '/whale-plus',
+  path: '/whale-plus',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
@@ -39,9 +48,19 @@ const Proceduralveo3Route = Proceduralveo3RouteImport.update({
   path: '/proceduralveo3',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MaxWhaleRoute = MaxWhaleRouteImport.update({
+  id: '/max-whale',
+  path: '/max-whale',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HistoricoRoute = HistoricoRouteImport.update({
   id: '/historico',
   path: '/historico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForexRoute = ForexRouteImport.update({
+  id: '/forex',
+  path: '/forex',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EstatisticasRoute = EstatisticasRouteImport.update({
@@ -52,6 +71,11 @@ const EstatisticasRoute = EstatisticasRouteImport.update({
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BacktestRoute = BacktestRouteImport.update({
+  id: '/backtest',
+  path: '/backtest',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalisesFuturoRoute = AnalisesFuturoRouteImport.update({
@@ -68,87 +92,122 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analises-futuro': typeof AnalisesFuturoRoute
+  '/backtest': typeof BacktestRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/forex': typeof ForexRoute
   '/historico': typeof HistoricoRoute
+  '/max-whale': typeof MaxWhaleRoute
   '/proceduralveo3': typeof Proceduralveo3Route
   '/proceduralveo4': typeof Proceduralveo4Route
   '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
+  '/whale-plus': typeof WhalePlusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analises-futuro': typeof AnalisesFuturoRoute
+  '/backtest': typeof BacktestRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/forex': typeof ForexRoute
   '/historico': typeof HistoricoRoute
+  '/max-whale': typeof MaxWhaleRoute
   '/proceduralveo3': typeof Proceduralveo3Route
   '/proceduralveo4': typeof Proceduralveo4Route
   '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
+  '/whale-plus': typeof WhalePlusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analises-futuro': typeof AnalisesFuturoRoute
+  '/backtest': typeof BacktestRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/forex': typeof ForexRoute
   '/historico': typeof HistoricoRoute
+  '/max-whale': typeof MaxWhaleRoute
   '/proceduralveo3': typeof Proceduralveo3Route
   '/proceduralveo4': typeof Proceduralveo4Route
   '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
+  '/whale-plus': typeof WhalePlusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/analises-futuro'
+    | '/backtest'
     | '/configuracoes'
     | '/estatisticas'
+    | '/forex'
     | '/historico'
+    | '/max-whale'
     | '/proceduralveo3'
     | '/proceduralveo4'
     | '/proceduralveo5'
     | '/sobre'
+    | '/whale-plus'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/analises-futuro'
+    | '/backtest'
     | '/configuracoes'
     | '/estatisticas'
+    | '/forex'
     | '/historico'
+    | '/max-whale'
     | '/proceduralveo3'
     | '/proceduralveo4'
     | '/proceduralveo5'
     | '/sobre'
+    | '/whale-plus'
   id:
     | '__root__'
     | '/'
     | '/analises-futuro'
+    | '/backtest'
     | '/configuracoes'
     | '/estatisticas'
+    | '/forex'
     | '/historico'
+    | '/max-whale'
     | '/proceduralveo3'
     | '/proceduralveo4'
     | '/proceduralveo5'
     | '/sobre'
+    | '/whale-plus'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalisesFuturoRoute: typeof AnalisesFuturoRoute
+  BacktestRoute: typeof BacktestRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   EstatisticasRoute: typeof EstatisticasRoute
+  ForexRoute: typeof ForexRoute
   HistoricoRoute: typeof HistoricoRoute
+  MaxWhaleRoute: typeof MaxWhaleRoute
   Proceduralveo3Route: typeof Proceduralveo3Route
   Proceduralveo4Route: typeof Proceduralveo4Route
   Proceduralveo5Route: typeof Proceduralveo5Route
   SobreRoute: typeof SobreRoute
+  WhalePlusRoute: typeof WhalePlusRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/whale-plus': {
+      id: '/whale-plus'
+      path: '/whale-plus'
+      fullPath: '/whale-plus'
+      preLoaderRoute: typeof WhalePlusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sobre': {
       id: '/sobre'
       path: '/sobre'
@@ -177,11 +236,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Proceduralveo3RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/max-whale': {
+      id: '/max-whale'
+      path: '/max-whale'
+      fullPath: '/max-whale'
+      preLoaderRoute: typeof MaxWhaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/historico': {
       id: '/historico'
       path: '/historico'
       fullPath: '/historico'
       preLoaderRoute: typeof HistoricoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forex': {
+      id: '/forex'
+      path: '/forex'
+      fullPath: '/forex'
+      preLoaderRoute: typeof ForexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/estatisticas': {
@@ -196,6 +269,13 @@ declare module '@tanstack/react-router' {
       path: '/configuracoes'
       fullPath: '/configuracoes'
       preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/backtest': {
+      id: '/backtest'
+      path: '/backtest'
+      fullPath: '/backtest'
+      preLoaderRoute: typeof BacktestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analises-futuro': {
@@ -218,13 +298,17 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalisesFuturoRoute: AnalisesFuturoRoute,
+  BacktestRoute: BacktestRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   EstatisticasRoute: EstatisticasRoute,
+  ForexRoute: ForexRoute,
   HistoricoRoute: HistoricoRoute,
+  MaxWhaleRoute: MaxWhaleRoute,
   Proceduralveo3Route: Proceduralveo3Route,
   Proceduralveo4Route: Proceduralveo4Route,
   Proceduralveo5Route: Proceduralveo5Route,
   SobreRoute: SobreRoute,
+  WhalePlusRoute: WhalePlusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,12 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Menu, X, Home, History, ShieldCheck, ShieldAlert, Sparkles, Users, BarChart3, Settings, Info } from "lucide-react";
+import { Menu, X, Home, History, ShieldCheck, ShieldAlert, Sparkles, Users, BarChart3, Settings, Info, FlaskConical, Brain, Activity, Banknote, Bell } from "lucide-react";
 import { useSignalEngine } from "@/lib/useSignalEngine";
 import { useStore } from "@/lib/store";
 import { pushPopup } from "@/components/Popup";
+import { ensureNotificationPermission } from "@/lib/notifications";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: Home },
+  { to: "/whale-plus", label: "Dashboard Whale+", icon: Activity },
+  { to: "/backtest", label: "Backtest", icon: FlaskConical },
+  { to: "/max-whale", label: "Max Whale", icon: Brain },
+  { to: "/forex", label: "Moedas Fiduciárias", icon: Banknote },
   { to: "/historico", label: "Histórico", icon: History },
   { to: "/proceduralveo3", label: "Proceduralveo3", icon: ShieldCheck },
   { to: "/proceduralveo4", label: "Proceduralveo4", icon: Sparkles },
@@ -26,6 +31,13 @@ export function Layout({ children }: { children: ReactNode }) {
   useSignalEngine();
   const whaleActive = useStore((s) => s.whaleActive);
   const veo5Enabled = useStore((s) => s.config.proceduralveo5.enabled);
+  const [notifPerm, setNotifPerm] = useState<NotificationPermission | "unsupported">(
+    () => (typeof Notification === "undefined" ? "unsupported" : Notification.permission),
+  );
+  useEffect(() => {
+    // Ask once, on mount, so signal popups can mirror to OS push.
+    ensureNotificationPermission().then((p) => setNotifPerm(p));
+  }, []);
   useEffect(() => {
     if (lastSeenWhale === whaleActive) return;
     if (lastSeenWhale === null) {
@@ -71,6 +83,14 @@ export function Layout({ children }: { children: ReactNode }) {
         </h1>
         <div className="h-10 w-10" />
       </header>
+      {notifPerm === "default" && (
+        <button
+          onClick={() => ensureNotificationPermission().then((p) => setNotifPerm(p))}
+          className="mx-auto mt-2 flex items-center gap-2 rounded-lg binance-panel px-3 py-2 text-xs text-primary"
+        >
+          <Bell className="h-4 w-4" /> Ativar notificações push
+        </button>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-40 animate-fade-up">

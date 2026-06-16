@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { pushNotify } from "@/lib/notifications";
 
 export type PopupVariant = "signal" | "started" | "win" | "loss" | "canceled" | "info";
 
@@ -13,6 +14,8 @@ let listeners: ((p: PopupItem) => void)[] = [];
 export function pushPopup(p: Omit<PopupItem, "id">) {
   const item: PopupItem = { ...p, id: `${Date.now()}-${Math.random()}` };
   listeners.forEach((l) => l(item));
+  // Mirror to OS-level push notification when permission granted
+  pushNotify(item.title, item.message);
 }
 
 const styles: Record<PopupVariant, string> = {
