@@ -36,6 +36,7 @@ const defaultConfig: AppConfig = {
     macd: { fast: 12, slow: 26, signal: 9, colorLine: "#f0b90b", colorSignal: "#7a5cff" },
     stochRsi: { rsiP: 14, stochP: 14, kP: 3, dP: 3, colorK: "#02c076", colorD: "#f6465d" },
   },
+  indicatorsEnabled: { ma: true, macd: true, stochRsi: true },
 };
 
 export const useStore = create<State>()(
@@ -98,6 +99,7 @@ export const useStore = create<State>()(
             procedural: { ...defaultConfig.procedural, ...(p.config?.procedural ?? {}) },
             proceduralveo4: { ...defaultConfig.proceduralveo4, ...(p.config?.proceduralveo4 ?? {}) },
             proceduralveo5: { ...defaultConfig.proceduralveo5, ...(p.config?.proceduralveo5 ?? {}) },
+            indicatorsEnabled: { ...defaultConfig.indicatorsEnabled, ...(p.config?.indicatorsEnabled ?? {}) },
             indicators: {
               ma: { ...defaultConfig.indicators.ma, ...(p.config?.indicators?.ma ?? {}) },
               macd: {

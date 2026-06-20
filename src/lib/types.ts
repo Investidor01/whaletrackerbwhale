@@ -55,4 +55,9 @@ export interface AppConfig {
     macd: { fast: number; slow: number; signal: number; colorLine: string; colorSignal: string };
     stochRsi: { rsiP: number; stochP: number; kP: number; dP: number; colorK: string; colorD: string };
   };
+  indicatorsEnabled: {
+    ma: boolean;
+    macd: boolean;
+    stochRsi: boolean;
+  };
 }
