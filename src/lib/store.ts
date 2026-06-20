@@ -15,6 +15,7 @@ interface State {
   setProceduralveo4: (p: Partial<AppConfig["proceduralveo4"]>) => void;
   setProceduralveo5: (p: Partial<AppConfig["proceduralveo5"]>) => void;
   setIndicators: (i: Partial<AppConfig["indicators"]>) => void;
+  setIndicatorsEnabled: (i: Partial<AppConfig["indicatorsEnabled"]>) => void;
   addSignal: (s: Signal) => void;
   updateSignal: (id: string, patch: Partial<Signal>) => void;
   clearHistory: () => void;
@@ -65,6 +66,10 @@ export const useStore = create<State>()(
               stochRsi: { ...s.config.indicators.stochRsi, ...(i.stochRsi ?? {}) },
             },
           },
+        })),
+      setIndicatorsEnabled: (i) =>
+        set((s) => ({
+          config: { ...s.config, indicatorsEnabled: { ...s.config.indicatorsEnabled, ...i } },
         })),
       addSignal: (sig) => set((s) => ({ history: [sig, ...s.history].slice(0, 500) })),
       updateSignal: (id, patch) =>
