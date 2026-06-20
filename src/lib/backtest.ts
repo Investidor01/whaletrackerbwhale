@@ -72,12 +72,18 @@ export function runBacktest(candles: Candle[], p: BacktestParams): BacktestResul
   return res;
 }
 
-// Mapping of preset periods to a tf + limit (Binance cap = 1000 per request)
-export const BACKTEST_PERIODS: { id: string; label: string; tf: string; limit: number }[] = [
-  { id: "1d", label: "1 Dia", tf: "1m", limit: 1000 },
-  { id: "1w", label: "1 Semana", tf: "15m", limit: 672 },
-  { id: "1m", label: "1 Mês", tf: "1h", limit: 720 },
-  { id: "1y", label: "1 Ano", tf: "1d", limit: 365 },
+// Available timeframes for backtest (Binance cap = 1000 candles per request)
+export const BACKTEST_TFS: { id: string; label: string }[] = [
+  { id: "1m", label: "M1" },
+  { id: "5m", label: "M5" },
+  { id: "30m", label: "M30" },
+  { id: "1h", label: "H1" },
+];
+
+export const BACKTEST_RANGES: { id: string; label: string; candles: number }[] = [
+  { id: "200", label: "Últimas 200 velas", candles: 200 },
+  { id: "500", label: "Últimas 500 velas", candles: 500 },
+  { id: "1000", label: "Últimas 1000 velas (máx)", candles: 1000 },
 ];
 
 // EMA helper re-export so other modules can rely on it

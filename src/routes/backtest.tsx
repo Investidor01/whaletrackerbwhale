@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { fetchKlines } from "@/lib/binance";
 import { useStore } from "@/lib/store";
-import { runBacktest, BACKTEST_PERIODS, type BacktestResult } from "@/lib/backtest";
+import { runBacktest, BACKTEST_TFS, BACKTEST_RANGES, type BacktestResult } from "@/lib/backtest";
 import { PAIRS } from "@/lib/binance";
 import { FlaskConical, Loader2, TrendingUp, TrendingDown } from "lucide-react";
 
@@ -14,16 +14,17 @@ export const Route = createFileRoute("/backtest")({
 function BacktestPage() {
   const config = useStore((s) => s.config);
   const [pair, setPair] = useState(config.pair);
-  const [periodId, setPeriodId] = useState("1d");
+  const [tf, setTf] = useState("5m");
+  const [rangeId, setRangeId] = useState("1000");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BacktestResult | null>(null);
   const [progress, setProgress] = useState(0);
-  const period = BACKTEST_PERIODS.find((p) => p.id === periodId)!;
+  const range = BACKTEST_RANGES.find((p) => p.id === rangeId)!;
 
   async function run() {
     setLoading(true); setResult(null); setProgress(10);
     try {
-      const candles = await fetchKlines(pair, period.tf, period.limit);
+      const candles = await fetchKlines(pair, tf, range.candles);
       setProgress(60);
       await new Promise((r) => setTimeout(r, 80));
       const r = runBacktest(candles, config.indicators);
@@ -45,7 +46,7 @@ function BacktestPage() {
       </div>
 
       <div className="binance-panel rounded-lg p-4 flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <label className="text-xs">
             <span className="opacity-60">Par</span>
             <select value={pair} onChange={(e) => setPair(e.target.value)} className="mt-1 w-full rounded-lg bg-card border border-border px-3 py-2 text-sm">
@@ -53,9 +54,15 @@ function BacktestPage() {
             </select>
           </label>
           <label className="text-xs">
-            <span className="opacity-60">Período</span>
-            <select value={periodId} onChange={(e) => setPeriodId(e.target.value)} className="mt-1 w-full rounded-lg bg-card border border-border px-3 py-2 text-sm">
-              {BACKTEST_PERIODS.map((p) => <option key={p.id} value={p.id}>{p.label} ({p.tf})</option>)}
+            <span className="opacity-60">Timeframe</span>
+            <select value={tf} onChange={(e) => setTf(e.target.value)} className="mt-1 w-full rounded-lg bg-card border border-border px-3 py-2 text-sm">
+              {BACKTEST_TFS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+          </label>
+          <label className="text-xs">
+            <span className="opacity-60">Amostra</span>
+            <select value={rangeId} onChange={(e) => setRangeId(e.target.value)} className="mt-1 w-full rounded-lg bg-card border border-border px-3 py-2 text-sm">
+              {BACKTEST_RANGES.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
             </select>
           </label>
         </div>
