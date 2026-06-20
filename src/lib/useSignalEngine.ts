@@ -35,35 +35,54 @@ export function signalDecision(
     allow99: boolean;
     veo5Enabled: boolean;
     veo5: { requireMA: boolean; requireMACD: boolean; requireStochRSI: boolean };
+    enabled?: { ma: boolean; macd: boolean; stochRsi: boolean };
   },
 ): { direction: Direction; confidence: number } | null {
-  // MA cross is mandatory for any signal (liquidity-of-whales rule).
-  if (!cross.ma) return null;
-  const dir = cross.ma;
+  const enabled = opts.enabled ?? { ma: true, macd: true, stochRsi: true };
 
-  const maAligned = directions.ma === dir;
-  const macdAligned = cross.macd === dir && directions.macd === dir;
-  const stochAligned = cross.stoch === dir && directions.stoch === dir;
+  // Any indicator (that is enabled) that crossed becomes a candidate trigger.
+  // Direction confirmation only requires the OTHER enabled indicators to be
+  // ALIGNED in the same direction (not necessarily crossing on the same tick).
+  const triggers: { src: "ma" | "macd" | "stoch"; dir: Direction }[] = [];
+  if (enabled.ma && cross.ma) triggers.push({ src: "ma", dir: cross.ma });
+  if (enabled.macd && cross.macd) triggers.push({ src: "macd", dir: cross.macd });
+  if (enabled.stochRsi && cross.stoch) triggers.push({ src: "stoch", dir: cross.stoch });
+  if (triggers.length === 0) return null;
 
-  // Proceduralveo5 — custom liquidity gate. Selected indicators MUST all cross
-  // simultaneously in the same direction; otherwise no signal at all.
-  if (opts.veo5Enabled) {
-    if (opts.veo5.requireMA && !(cross.ma === dir && maAligned)) return null;
-    if (opts.veo5.requireMACD && !macdAligned) return null;
-    if (opts.veo5.requireStochRSI && !stochAligned) return null;
-  }
+  // Choose the trigger with the most agreement among enabled indicators.
+  let best: { direction: Direction; confidence: number } | null = null;
+  for (const t of triggers) {
+    const aligned = {
+      ma: enabled.ma ? directions.ma === t.dir : true,
+      macd: enabled.macd ? directions.macd === t.dir : true,
+      stoch: enabled.stochRsi ? directions.stoch === t.dir : true,
+    };
 
-  // Assertivity rule: MA+MACD => 80%, MA+MACD+StochRSI => 99%.
-  if (maAligned && macdAligned && stochAligned) {
-    if (opts.allow99) return { direction: dir, confidence: 99 };
-    if (opts.allow80) return { direction: dir, confidence: 80 };
-    return null;
+    // Proceduralveo5 — custom liquidity gate.
+    if (opts.veo5Enabled) {
+      if (opts.veo5.requireMA && !aligned.ma) continue;
+      if (opts.veo5.requireMACD && !aligned.macd) continue;
+      if (opts.veo5.requireStochRSI && !aligned.stoch) continue;
+    }
+
+    const alignedCount = (aligned.ma ? 1 : 0) + (aligned.macd ? 1 : 0) + (aligned.stoch ? 1 : 0);
+    const enabledCount = (enabled.ma ? 1 : 0) + (enabled.macd ? 1 : 0) + (enabled.stochRsi ? 1 : 0);
+
+    // Confidence: full alignment of all enabled indicators => 99%, otherwise 80%.
+    let confidence: number | null = null;
+    if (alignedCount === enabledCount && enabledCount >= 2) {
+      if (opts.allow99) confidence = 99;
+      else if (opts.allow80) confidence = 80;
+    } else if (alignedCount >= Math.max(2, Math.ceil(enabledCount * 0.66))) {
+      if (opts.allow80) confidence = 80;
+    } else if (enabledCount === 1) {
+      // Single-indicator mode: trigger alone is enough.
+      if (opts.allow80) confidence = 80;
+    }
+    if (confidence == null) continue;
+    if (!best || confidence > best.confidence) best = { direction: t.dir, confidence };
   }
-  if (maAligned && macdAligned) {
-    if (opts.allow80) return { direction: dir, confidence: 80 };
-    return null;
-  }
-  return null;
+  return best;
 }
 
 /**
@@ -210,6 +229,14 @@ export function useSignalEngine() {
 
     // 4. Generate new signal (only if no active signal & whale on)
     if (!active && whaleActive) {
+      // Dedupe: never emit two signals for the same candle.
+      const dup = state.history.find(
+        (h) =>
+          h.pair === config.pair &&
+          h.timeframe === config.timeframe &&
+          h.signalCandleStart === liveCandle.time,
+      );
+      if (dup) return;
       const cr = detectCrossings(candles, config.indicators);
       const decision = signalDecision(cr, liveDir, {
         allow80: config.proceduralveo4.allow80,
@@ -220,6 +247,7 @@ export function useSignalEngine() {
           requireMACD: config.proceduralveo5.requireMACD,
           requireStochRSI: config.proceduralveo5.requireStochRSI,
         },
+        enabled: config.indicatorsEnabled,
       });
       if (decision) {
         const entryCandleStart = liveCandle.time + tfSec;

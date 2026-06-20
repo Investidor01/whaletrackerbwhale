@@ -8,13 +8,23 @@ export const Route = createFileRoute("/configuracoes")({
 });
 
 function ConfigPage() {
-  const { config, setConfig, setProcedural, setIndicators } = useStore();
+  const { config, setConfig, setProcedural, setIndicators, setIndicatorsEnabled } = useStore();
   const ind = config.indicators;
+  const enabled = config.indicatorsEnabled ?? { ma: true, macd: true, stochRsi: true };
   return (
     <div className="flex flex-col gap-4 animate-fade-up">
       <div className="binance-panel rounded-lg p-4">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">Whale Tracker AI</div>
         <h2 className="font-display text-2xl font-bold text-primary">Configurações</h2>
+      </div>
+      <div className="binance-panel rounded-lg p-4 flex flex-col gap-3">
+        <div>
+          <div className="font-display text-sm font-bold text-primary">Indicadores ativos para sinal</div>
+          <div className="text-[11px] opacity-60">Desative para gerar sinais com apenas um indicador, sem confluência obrigatória.</div>
+        </div>
+        <ToggleRow label="Médias Móveis (MA)" value={enabled.ma} onChange={(v) => setIndicatorsEnabled({ ma: v })} />
+        <ToggleRow label="MACD" value={enabled.macd} onChange={(v) => setIndicatorsEnabled({ macd: v })} />
+        <ToggleRow label="Stochastic RSI" value={enabled.stochRsi} onChange={(v) => setIndicatorsEnabled({ stochRsi: v })} />
       </div>
       <div className="binance-panel rounded-lg p-4 flex flex-col gap-2">
         <label className="text-sm opacity-80">Par padrão</label>
@@ -99,5 +109,20 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
         className="h-8 w-12 rounded cursor-pointer bg-transparent border-0"
       />
     </label>
+  );
+}
+
+function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className="flex items-center justify-between gap-2 bg-card rounded-lg px-3 py-2 text-left"
+    >
+      <span className="text-sm">{label}</span>
+      <span className={`relative inline-block h-6 w-11 rounded-full transition ${value ? "bg-primary" : "bg-muted"}`}>
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-background transition-all ${value ? "left-[22px]" : "left-0.5"}`} />
+      </span>
+    </button>
   );
 }

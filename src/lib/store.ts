@@ -15,6 +15,7 @@ interface State {
   setProceduralveo4: (p: Partial<AppConfig["proceduralveo4"]>) => void;
   setProceduralveo5: (p: Partial<AppConfig["proceduralveo5"]>) => void;
   setIndicators: (i: Partial<AppConfig["indicators"]>) => void;
+  setIndicatorsEnabled: (i: Partial<AppConfig["indicatorsEnabled"]>) => void;
   addSignal: (s: Signal) => void;
   updateSignal: (id: string, patch: Partial<Signal>) => void;
   clearHistory: () => void;
@@ -36,6 +37,7 @@ const defaultConfig: AppConfig = {
     macd: { fast: 12, slow: 26, signal: 9, colorLine: "#f0b90b", colorSignal: "#7a5cff" },
     stochRsi: { rsiP: 14, stochP: 14, kP: 3, dP: 3, colorK: "#02c076", colorD: "#f6465d" },
   },
+  indicatorsEnabled: { ma: true, macd: true, stochRsi: true },
 };
 
 export const useStore = create<State>()(
@@ -65,6 +67,10 @@ export const useStore = create<State>()(
             },
           },
         })),
+      setIndicatorsEnabled: (i) =>
+        set((s) => ({
+          config: { ...s.config, indicatorsEnabled: { ...s.config.indicatorsEnabled, ...i } },
+        })),
       addSignal: (sig) => set((s) => ({ history: [sig, ...s.history].slice(0, 500) })),
       updateSignal: (id, patch) =>
         set((s) => ({ history: s.history.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
@@ -78,7 +84,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "whale-tracker-ai",
-      version: 5,
+      version: 6,
       partialize: (s) => ({
         config: s.config,
         history: s.history,
@@ -98,6 +104,7 @@ export const useStore = create<State>()(
             procedural: { ...defaultConfig.procedural, ...(p.config?.procedural ?? {}) },
             proceduralveo4: { ...defaultConfig.proceduralveo4, ...(p.config?.proceduralveo4 ?? {}) },
             proceduralveo5: { ...defaultConfig.proceduralveo5, ...(p.config?.proceduralveo5 ?? {}) },
+            indicatorsEnabled: { ...defaultConfig.indicatorsEnabled, ...(p.config?.indicatorsEnabled ?? {}) },
             indicators: {
               ma: { ...defaultConfig.indicators.ma, ...(p.config?.indicators?.ma ?? {}) },
               macd: {
