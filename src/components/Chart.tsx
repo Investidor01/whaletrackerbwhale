@@ -53,6 +53,8 @@ export function Chart({ candles, markers }: Props) {
   useEffect(() => {
     if (!seriesRef.current || candles.length === 0) return;
     seriesRef.current.setData(candles.map((c) => ({ ...c, time: c.time as Time })));
+    // Re-apply markers after candle data refresh so stale arrows can't linger.
+    markersRef.current?.setMarkers(markers);
   }, [candles]);
 
   useEffect(() => {
