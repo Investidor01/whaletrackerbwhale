@@ -98,7 +98,7 @@ export function DashboardView({ pairs, title, subtitle, icon = "🐋", priceDigi
     };
   }, [candles, config.indicators]);
 
-  const enabled = config.indicatorsEnabled;
+  const enabled = config.indicatorsEnabled ?? { ma: true, macd: true, stochRsi: true };
 
   return (
     <div className="flex flex-col gap-3 animate-fade-up">

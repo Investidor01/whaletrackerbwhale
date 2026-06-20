@@ -10,7 +10,7 @@ export const Route = createFileRoute("/configuracoes")({
 function ConfigPage() {
   const { config, setConfig, setProcedural, setIndicators, setIndicatorsEnabled } = useStore();
   const ind = config.indicators;
-  const enabled = config.indicatorsEnabled;
+  const enabled = config.indicatorsEnabled ?? { ma: true, macd: true, stochRsi: true };
   return (
     <div className="flex flex-col gap-4 animate-fade-up">
       <div className="binance-panel rounded-lg p-4">

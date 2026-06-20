@@ -84,7 +84,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "whale-tracker-ai",
-      version: 5,
+      version: 6,
       partialize: (s) => ({
         config: s.config,
         history: s.history,
