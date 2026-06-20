@@ -97,7 +97,7 @@ function MaxWhalePage() {
           <h1 className="font-display text-xl font-bold">Max Whale</h1>
         </div>
         <p className="text-xs text-muted-foreground">
-          Algoritmo automático que testa centenas de combinações de períodos de indicadores em dados históricos e identifica a configuração com a maior assertividade do dia.
+          Gera configurações próprias automaticamente, testando centenas de combinações de períodos de indicadores em dados ao vivo. Não depende do seu histórico — busca o padrão mais assertivo do momento e permite importar com um toque.
         </p>
       </div>
 

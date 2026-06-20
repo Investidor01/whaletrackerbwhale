@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Menu, X, Home, History, ShieldCheck, ShieldAlert, Sparkles, Users, BarChart3, Settings, Info, FlaskConical, Brain, Activity, Banknote, Bell } from "lucide-react";
+import { Menu, X, Home, History, ShieldCheck, ShieldAlert, Sparkles, Users, BarChart3, Settings, Info, FlaskConical, Brain, Activity, Banknote, Bell, Crown } from "lucide-react";
 import { useSignalEngine } from "@/lib/useSignalEngine";
 import { useStore } from "@/lib/store";
 import { pushPopup } from "@/components/Popup";
@@ -9,6 +9,7 @@ import { ensureNotificationPermission } from "@/lib/notifications";
 const NAV = [
   { to: "/", label: "Dashboard", icon: Home },
   { to: "/whale-plus", label: "Dashboard Whale+", icon: Activity },
+  { to: "/pro-whale", label: "Pro Whale+ (S/R + LTA/LTB)", icon: Crown },
   { to: "/backtest", label: "Backtest", icon: FlaskConical },
   { to: "/max-whale", label: "Max Whale", icon: Brain },
   { to: "/forex", label: "Moedas Fiduciárias", icon: Banknote },
