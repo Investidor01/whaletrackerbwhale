@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Activity, Globe2, ShieldCheck, Sparkles, Target, TrendingUp, Waves } from "lucide-react";
+import { Activity, Globe2, ShieldCheck, Sparkles, Target, TrendingUp, Waves, Instagram, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/sobre")({
   head: () => ({
@@ -66,6 +66,35 @@ function SobrePage() {
           <Quote text="Operei 14 sinais essa semana. 13 wins." who="Marcus T., BR" />
           <Quote text="O Proceduralveo3 me salvou de 4 perdas em um único dia." who="Linda W., US" />
           <Quote text="Sinto que estou vendo o mercado pelos olhos das baleias." who="Hiroshi T., JP" />
+        </div>
+      </section>
+
+      {/* Criador */}
+      <section className="relative overflow-hidden rounded-2xl binance-panel p-6">
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-transparent" />
+        <div className="relative flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/15 text-primary">
+              <Crown className="h-7 w-7" />
+            </div>
+            <div>
+              <div className="font-display text-xl font-bold text-primary">Dantas Patryk</div>
+              <div className="text-[11px] uppercase tracking-widest opacity-70">Fundador · CEO Whale Tracker AI</div>
+            </div>
+          </div>
+          <p className="text-sm opacity-90 leading-relaxed">
+            Fundador do <b>Grupo Dantas Fintech</b> e CEO do <b>Whale Tracker AI</b>.
+            Um servo de Deus que visa mudar a história financeira dos povos —
+            dando a liberdade de <b>aprender, construir e vencer</b>.
+          </p>
+          <a
+            href="https://instagram.com/thedantaspatryk"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 text-primary hover:opacity-80 text-sm font-medium w-fit"
+          >
+            <Instagram className="h-4 w-4" /> @thedantaspatryk
+          </a>
         </div>
       </section>
 

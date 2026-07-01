@@ -41,6 +41,7 @@ export interface AppConfig {
     checkStochRSI: boolean;
   };
   proceduralveo4: {
+    allowMAonly: boolean;
     allow80: boolean;
     allow99: boolean;
   };
@@ -49,6 +50,19 @@ export interface AppConfig {
     requireMA: boolean;
     requireMACD: boolean;
     requireStochRSI: boolean;
+  };
+  proceduralveo6: {
+    allowCall: boolean;
+    allowPut: boolean;
+    blockNearCloseEnabled: boolean;
+    blockNearCloseSeconds: number;
+    cooldownEnabled: boolean;
+    cooldownSeconds: number;
+  };
+  whalePlus: {
+    enabled: boolean;
+    emaPeriod: number;
+    strengthThreshold: number; // % distância mínima do preço à EMA
   };
   indicators: {
     ma: { short: number; mid: number; long: number; colorShort: string; colorMid: string; colorLong: string };

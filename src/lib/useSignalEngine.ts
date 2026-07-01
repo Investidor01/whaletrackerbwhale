@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useStore } from "./store";
 import { fetchKlines, subscribeKline, tfSeconds } from "./binance";
-import { computeAll, detectCrossings, type CrossResult, type IndicatorSnapshot } from "./indicators";
+import { computeAll, detectCrossings, ema, type CrossResult, type IndicatorSnapshot } from "./indicators";
 import type { Direction, Signal } from "./types";
 import { pushPopup } from "@/components/Popup";
 
@@ -31,6 +31,7 @@ export function signalDecision(
   cross: CrossResult,
   directions: CrossResult,
   opts: {
+    allowMAonly: boolean;
     allow80: boolean;
     allow99: boolean;
     veo5Enabled: boolean;
@@ -65,19 +66,25 @@ export function signalDecision(
       if (opts.veo5.requireStochRSI && !aligned.stoch) continue;
     }
 
-    const alignedCount = (aligned.ma ? 1 : 0) + (aligned.macd ? 1 : 0) + (aligned.stoch ? 1 : 0);
-    const enabledCount = (enabled.ma ? 1 : 0) + (enabled.macd ? 1 : 0) + (enabled.stochRsi ? 1 : 0);
-
-    // Confidence: full alignment of all enabled indicators => 99%, otherwise 80%.
+    // Proceduralveo4 scale: MA=80%, MA+MACD=88%, MA+MACD+StochRSI=99%.
+    const alignedMA = enabled.ma && aligned.ma;
+    const alignedMACD = enabled.macd && aligned.macd;
+    const alignedStoch = enabled.stochRsi && aligned.stoch;
     let confidence: number | null = null;
-    if (alignedCount === enabledCount && enabledCount >= 2) {
+    if (alignedMA && alignedMACD && alignedStoch) {
       if (opts.allow99) confidence = 99;
-      else if (opts.allow80) confidence = 80;
-    } else if (alignedCount >= Math.max(2, Math.ceil(enabledCount * 0.66))) {
-      if (opts.allow80) confidence = 80;
-    } else if (enabledCount === 1) {
-      // Single-indicator mode: trigger alone is enough.
-      if (opts.allow80) confidence = 80;
+      else if (opts.allow80) confidence = 88;
+      else if (opts.allowMAonly) confidence = 80;
+    } else if (alignedMA && alignedMACD) {
+      if (opts.allow80) confidence = 88;
+      else if (opts.allowMAonly) confidence = 80;
+    } else if (alignedMA && opts.allowMAonly) {
+      confidence = 80;
+    } else if (!enabled.ma) {
+      const others = (alignedMACD ? 1 : 0) + (alignedStoch ? 1 : 0);
+      const enabledOthers = (enabled.macd ? 1 : 0) + (enabled.stochRsi ? 1 : 0);
+      if (others === enabledOthers && enabledOthers >= 2 && opts.allow99) confidence = 99;
+      else if (others >= 1 && opts.allow80) confidence = 80;
     }
     if (confidence == null) continue;
     if (!best || confidence > best.confidence) best = { direction: t.dir, confidence };
@@ -99,6 +106,7 @@ export function useSignalEngine() {
   const setActiveSignal = useStore((s) => s.setActiveSignal);
   const addSignal = useStore((s) => s.addSignal);
   const updateSignal = useStore((s) => s.updateSignal);
+  const setLastSignalAt = useStore((s) => s.setLastSignalAt);
 
   const lastClosedTimeRef = useRef<number>(0);
 
@@ -229,6 +237,35 @@ export function useSignalEngine() {
 
     // 4. Generate new signal (only if no active signal & whale on)
     if (!active && whaleActive) {
+      const veo6 = config.proceduralveo6;
+      const wp = config.whalePlus;
+      const anyDirectionAllowed = veo6.allowCall || veo6.allowPut;
+      const anyMethodActive = anyDirectionAllowed || wp.enabled;
+      if (!anyMethodActive) {
+        popupOnce(`veo6:none`, {
+          variant: "info",
+          title: "Ative Proceduralveo6 ou Whale+",
+          message: "Habilite Call/Put no Proceduralveo6 ou EMA de Força no Whale+ para continuar.",
+        });
+        return;
+      }
+      if (veo6.cooldownEnabled && state.lastSignalAt) {
+        const elapsed = (Date.now() - state.lastSignalAt) / 1000;
+        if (elapsed < veo6.cooldownSeconds) {
+          popupOnce(`cooldown:${state.lastSignalAt}`, {
+            variant: "info",
+            title: "Cooldown de Segurança",
+            message: `Aguardando ${Math.ceil(veo6.cooldownSeconds - elapsed)}s para o próximo sinal.`,
+          });
+          return;
+        }
+      }
+      if (veo6.blockNearCloseEnabled) {
+        const nowSec = Math.floor(Date.now() / 1000);
+        const rem = liveCandle.time + tfSec - nowSec;
+        if (rem > 0 && rem <= veo6.blockNearCloseSeconds) return;
+      }
+
       // Dedupe: never emit two signals for the same candle.
       const dup = state.history.find(
         (h) =>
@@ -239,6 +276,7 @@ export function useSignalEngine() {
       if (dup) return;
       const cr = detectCrossings(candles, config.indicators);
       const decision = signalDecision(cr, liveDir, {
+        allowMAonly: config.proceduralveo4.allowMAonly,
         allow80: config.proceduralveo4.allow80,
         allow99: config.proceduralveo4.allow99,
         veo5Enabled: config.proceduralveo5.enabled,
@@ -249,7 +287,26 @@ export function useSignalEngine() {
         },
         enabled: config.indicatorsEnabled,
       });
-      if (decision) {
+      if (!decision) return;
+
+      if (anyDirectionAllowed) {
+        if (decision.direction === "UP" && !veo6.allowCall) return;
+        if (decision.direction === "DOWN" && !veo6.allowPut) return;
+      }
+
+      if (wp.enabled) {
+        const closes = candles.map((c) => c.close);
+        const e = ema(closes, wp.emaPeriod);
+        const lastE = e[e.length - 1];
+        if (lastE == null || !Number.isFinite(lastE)) return;
+        const price = liveCandle.close;
+        const distPct = ((price - lastE) / lastE) * 100;
+        if (Math.abs(distPct) < wp.strengthThreshold) return;
+        const forceDir: Direction = distPct > 0 ? "UP" : "DOWN";
+        if (forceDir !== decision.direction) return;
+      }
+
+      {
         const entryCandleStart = liveCandle.time + tfSec;
         const sig: Signal = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -266,6 +323,7 @@ export function useSignalEngine() {
         };
         addSignal(sig);
         setActiveSignal(sig.id);
+        setLastSignalAt(Date.now());
         popupOnce(`signal:${sig.id}`, {
           variant: "signal",
           title: `Sinal Gerado — ${sig.direction === "UP" ? "CALL" : "PUT"} (${sig.confidence}%)`,
@@ -273,5 +331,5 @@ export function useSignalEngine() {
         });
       }
     }
-  }, [candles, whaleActive, config, addSignal, updateSignal, setCross, setActiveSignal, activeSignalId]);
+  }, [candles, whaleActive, config, addSignal, updateSignal, setCross, setActiveSignal, setLastSignalAt, activeSignalId]);
 }

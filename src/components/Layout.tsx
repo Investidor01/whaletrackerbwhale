@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Menu, X, Home, History, ShieldCheck, ShieldAlert, Sparkles, Users, BarChart3, Settings, Info, FlaskConical, Brain, Activity, Banknote, Bell, Crown } from "lucide-react";
+import { Menu, X, Home, History, ShieldCheck, ShieldAlert, Sparkles, Users, BarChart3, Settings, Info, Bell, Waves, Zap } from "lucide-react";
 import { useSignalEngine } from "@/lib/useSignalEngine";
 import { useStore } from "@/lib/store";
 import { pushPopup } from "@/components/Popup";
@@ -8,15 +8,12 @@ import { ensureNotificationPermission } from "@/lib/notifications";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: Home },
-  { to: "/whale-plus", label: "Dashboard Whale+", icon: Activity },
-  { to: "/pro-whale", label: "Pro Whale+ (S/R + LTA/LTB)", icon: Crown },
-  { to: "/backtest", label: "Backtest", icon: FlaskConical },
-  { to: "/max-whale", label: "Max Whale", icon: Brain },
-  { to: "/forex", label: "Moedas Fiduciárias", icon: Banknote },
   { to: "/historico", label: "Histórico", icon: History },
   { to: "/proceduralveo3", label: "Proceduralveo3", icon: ShieldCheck },
   { to: "/proceduralveo4", label: "Proceduralveo4", icon: Sparkles },
   { to: "/proceduralveo5", label: "Proceduralveo5", icon: ShieldAlert },
+  { to: "/proceduralveo6", label: "Proceduralveo6", icon: Zap },
+  { to: "/whale-plus", label: "Whale +", icon: Waves },
   { to: "/analises-futuro", label: "Análises do Futuro", icon: Users },
   { to: "/estatisticas", label: "Estatísticas", icon: BarChart3 },
   { to: "/configuracoes", label: "Configurações", icon: Settings },

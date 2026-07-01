@@ -150,16 +150,16 @@ export function DashboardView({ pairs, title, subtitle, icon = "🐋", priceDigi
 
       {indicatorData ? (
         <div className="flex flex-col gap-3">
-          {enabled.ma && <IndicatorPanel title="Médias Móveis" subtitle={`MA ${config.indicators.ma.short}/${config.indicators.ma.mid}/${config.indicators.ma.long}`} lines={indicatorData.ma} />}
-          {enabled.macd && <IndicatorPanel title="MACD" subtitle={`${config.indicators.macd.fast}/${config.indicators.macd.slow}/${config.indicators.macd.signal}`} lines={indicatorData.macd} />}
-          {enabled.stochRsi && <IndicatorPanel title="RSI Estocástico" subtitle={`${config.indicators.stochRsi.rsiP}/${config.indicators.stochRsi.stochP}`} lines={indicatorData.stoch} />}
+          {enabled.ma && <IndicatorPanel title="BILIONSTART" subtitle={`Médias Móveis · ${config.indicators.ma.short}/${config.indicators.ma.mid}/${config.indicators.ma.long}`} lines={indicatorData.ma} />}
+          {enabled.macd && <IndicatorPanel title="LISPREVIEW" subtitle={`MACD · ${config.indicators.macd.fast}/${config.indicators.macd.slow}/${config.indicators.macd.signal}`} lines={indicatorData.macd} />}
+          {enabled.stochRsi && <IndicatorPanel title="OLHONEXTVEO7" subtitle={`RSI Estocástico · ${config.indicators.stochRsi.rsiP}/${config.indicators.stochRsi.stochP}`} lines={indicatorData.stoch} />}
         </div>
       ) : null}
 
       <div className="grid grid-cols-3 gap-2">
-        {enabled.ma && <CrossCard label="MA" sub={`${config.indicators.ma.short}/${config.indicators.ma.mid}/${config.indicators.ma.long}`} dir={cross.ma} color={config.indicators.ma.colorMid} active={activeSignal} />}
-        {enabled.macd && <CrossCard label="MACD" sub={`${config.indicators.macd.fast}/${config.indicators.macd.slow}`} dir={cross.macd} color={config.indicators.macd.colorLine} active={activeSignal} />}
-        {enabled.stochRsi && <CrossCard label="StochRSI" sub={`${config.indicators.stochRsi.rsiP}/${config.indicators.stochRsi.stochP}`} dir={cross.stoch} color={config.indicators.stochRsi.colorK} active={activeSignal} />}
+        {enabled.ma && <CrossCard label="BILIONSTART" sub={`${config.indicators.ma.short}/${config.indicators.ma.mid}/${config.indicators.ma.long}`} dir={cross.ma} color={config.indicators.ma.colorMid} active={activeSignal} />}
+        {enabled.macd && <CrossCard label="LISPREVIEW" sub={`${config.indicators.macd.fast}/${config.indicators.macd.slow}`} dir={cross.macd} color={config.indicators.macd.colorLine} active={activeSignal} />}
+        {enabled.stochRsi && <CrossCard label="OLHONEXTVEO7" sub={`${config.indicators.stochRsi.rsiP}/${config.indicators.stochRsi.stochP}`} dir={cross.stoch} color={config.indicators.stochRsi.colorK} active={activeSignal} />}
       </div>
 
       <div className="flex flex-col items-center mt-4">
