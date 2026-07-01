@@ -26,22 +26,29 @@ function Proceduralveo4Page() {
       <div className="binance-panel rounded-lg p-4">
         <h3 className="font-display font-bold text-sm mb-2">Como funciona</h3>
         <ul className="text-xs opacity-80 leading-relaxed list-disc pl-5 space-y-1">
-          <li><span className="text-[color:var(--win)] font-semibold">80%</span> — exige cruzamento simultâneo de <b>MA + MACD</b> na mesma direção.</li>
-          <li><span className="text-primary font-semibold">99%</span> — exige cruzamento simultâneo de <b>MA + MACD + StochRSI</b> alinhados.</li>
-          <li>A <b>MA</b> é sempre obrigatória — sem cruzamento da MA, nenhum sinal é gerado.</li>
-          <li>Desligando os dois toggles, o sistema deixa de gerar sinais até você reativar.</li>
+          <li><span className="text-primary font-semibold">80%</span> — apenas a <b>BILIONSTART (MA)</b> alinhada. Volume máximo de sinais.</li>
+          <li><span className="text-[color:var(--win)] font-semibold">88%</span> — <b>BILIONSTART + LISPREVIEW (MACD)</b> alinhados. Balanço volume x precisão.</li>
+          <li><span className="text-primary font-semibold">99%</span> — <b>BILIONSTART + LISPREVIEW + OLHONEXTVEO7 (StochRSI)</b> alinhados. Máxima assertividade.</li>
+          <li>A <b>BILIONSTART</b> é sempre a âncora — sem alinhamento dela nenhum sinal é gerado.</li>
+          <li>Desligando todos os toggles, o sistema deixa de gerar sinais até você reativar.</li>
         </ul>
       </div>
 
       <Toggle
-        label="Permitir sinais 80% (MA + MACD)"
-        sub="Dois indicadores cruzando juntos."
+        label="Permitir sinais 80% (só BILIONSTART)"
+        sub="Análise apenas das Médias Móveis alinhadas."
+        value={v.allowMAonly}
+        onChange={(x) => setProceduralveo4({ allowMAonly: x })}
+      />
+      <Toggle
+        label="Permitir sinais 88% (BILIONSTART + LISPREVIEW)"
+        sub="Dois indicadores alinhados na mesma direção."
         value={v.allow80}
         onChange={(x) => setProceduralveo4({ allow80: x })}
       />
       <Toggle
-        label="Permitir sinais 99% (MA + MACD + StochRSI)"
-        sub="Três indicadores cruzando juntos — máxima assertividade."
+        label="Permitir sinais 99% (BILIONSTART + LISPREVIEW + OLHONEXTVEO7)"
+        sub="Três indicadores alinhados — máxima confluência."
         value={v.allow99}
         onChange={(x) => setProceduralveo4({ allow99: x })}
       />
