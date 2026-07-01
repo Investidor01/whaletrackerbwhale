@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useStore } from "./store";
 import { fetchKlines, subscribeKline, tfSeconds } from "./binance";
-import { computeAll, detectCrossings, type CrossResult, type IndicatorSnapshot } from "./indicators";
+import { computeAll, detectCrossings, ema, type CrossResult, type IndicatorSnapshot } from "./indicators";
 import type { Direction, Signal } from "./types";
 import { pushPopup } from "@/components/Popup";
 
@@ -31,6 +31,7 @@ export function signalDecision(
   cross: CrossResult,
   directions: CrossResult,
   opts: {
+    allowMAonly: boolean;
     allow80: boolean;
     allow99: boolean;
     veo5Enabled: boolean;
@@ -65,19 +66,25 @@ export function signalDecision(
       if (opts.veo5.requireStochRSI && !aligned.stoch) continue;
     }
 
-    const alignedCount = (aligned.ma ? 1 : 0) + (aligned.macd ? 1 : 0) + (aligned.stoch ? 1 : 0);
-    const enabledCount = (enabled.ma ? 1 : 0) + (enabled.macd ? 1 : 0) + (enabled.stochRsi ? 1 : 0);
-
-    // Confidence: full alignment of all enabled indicators => 99%, otherwise 80%.
+    // Proceduralveo4 scale: MA=80%, MA+MACD=88%, MA+MACD+StochRSI=99%.
+    const alignedMA = enabled.ma && aligned.ma;
+    const alignedMACD = enabled.macd && aligned.macd;
+    const alignedStoch = enabled.stochRsi && aligned.stoch;
     let confidence: number | null = null;
-    if (alignedCount === enabledCount && enabledCount >= 2) {
+    if (alignedMA && alignedMACD && alignedStoch) {
       if (opts.allow99) confidence = 99;
-      else if (opts.allow80) confidence = 80;
-    } else if (alignedCount >= Math.max(2, Math.ceil(enabledCount * 0.66))) {
-      if (opts.allow80) confidence = 80;
-    } else if (enabledCount === 1) {
-      // Single-indicator mode: trigger alone is enough.
-      if (opts.allow80) confidence = 80;
+      else if (opts.allow80) confidence = 88;
+      else if (opts.allowMAonly) confidence = 80;
+    } else if (alignedMA && alignedMACD) {
+      if (opts.allow80) confidence = 88;
+      else if (opts.allowMAonly) confidence = 80;
+    } else if (alignedMA && opts.allowMAonly) {
+      confidence = 80;
+    } else if (!enabled.ma) {
+      const others = (alignedMACD ? 1 : 0) + (alignedStoch ? 1 : 0);
+      const enabledOthers = (enabled.macd ? 1 : 0) + (enabled.stochRsi ? 1 : 0);
+      if (others === enabledOthers && enabledOthers >= 2 && opts.allow99) confidence = 99;
+      else if (others >= 1 && opts.allow80) confidence = 80;
     }
     if (confidence == null) continue;
     if (!best || confidence > best.confidence) best = { direction: t.dir, confidence };
