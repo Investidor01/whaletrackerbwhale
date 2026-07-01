@@ -10,10 +10,13 @@ interface State {
   activeSignalId: string | null;
   candles: Candle[];
   cross: CrossResult;
+  lastSignalAt: number;
   setConfig: (c: Partial<AppConfig>) => void;
   setProcedural: (p: Partial<AppConfig["procedural"]>) => void;
   setProceduralveo4: (p: Partial<AppConfig["proceduralveo4"]>) => void;
   setProceduralveo5: (p: Partial<AppConfig["proceduralveo5"]>) => void;
+  setProceduralveo6: (p: Partial<AppConfig["proceduralveo6"]>) => void;
+  setWhalePlus: (p: Partial<AppConfig["whalePlus"]>) => void;
   setIndicators: (i: Partial<AppConfig["indicators"]>) => void;
   setIndicatorsEnabled: (i: Partial<AppConfig["indicatorsEnabled"]>) => void;
   addSignal: (s: Signal) => void;
@@ -24,14 +27,24 @@ interface State {
   setCandles: (c: Candle[] | ((prev: Candle[]) => Candle[])) => void;
   setCross: (c: CrossResult) => void;
   setActiveSignal: (id: string | null) => void;
+  setLastSignalAt: (t: number) => void;
 }
 
 const defaultConfig: AppConfig = {
   pair: "BTCUSDT",
   timeframe: "1m",
   procedural: { seconds: 15, checkMA: true, checkMACD: true, checkStochRSI: true },
-  proceduralveo4: { allow80: true, allow99: true },
+  proceduralveo4: { allowMAonly: false, allow80: true, allow99: true },
   proceduralveo5: { enabled: false, requireMA: true, requireMACD: true, requireStochRSI: false },
+  proceduralveo6: {
+    allowCall: true,
+    allowPut: true,
+    blockNearCloseEnabled: true,
+    blockNearCloseSeconds: 7,
+    cooldownEnabled: true,
+    cooldownSeconds: 60,
+  },
+  whalePlus: { enabled: false, emaPeriod: 50, strengthThreshold: 0.1 },
   indicators: {
     ma: { short: 7, mid: 25, long: 99, colorShort: "#facc15", colorMid: "#22c55e", colorLong: "#ef4444" },
     macd: { fast: 12, slow: 26, signal: 9, colorLine: "#f0b90b", colorSignal: "#7a5cff" },
@@ -49,6 +62,7 @@ export const useStore = create<State>()(
       activeSignalId: null,
       candles: [],
       cross: { ma: null, macd: null, stoch: null },
+      lastSignalAt: 0,
       setConfig: (c) => set((s) => ({ config: { ...s.config, ...c } })),
       setProcedural: (p) =>
         set((s) => ({ config: { ...s.config, procedural: { ...s.config.procedural, ...p } } })),
@@ -56,6 +70,10 @@ export const useStore = create<State>()(
         set((s) => ({ config: { ...s.config, proceduralveo4: { ...s.config.proceduralveo4, ...p } } })),
       setProceduralveo5: (p) =>
         set((s) => ({ config: { ...s.config, proceduralveo5: { ...s.config.proceduralveo5, ...p } } })),
+      setProceduralveo6: (p) =>
+        set((s) => ({ config: { ...s.config, proceduralveo6: { ...s.config.proceduralveo6, ...p } } })),
+      setWhalePlus: (p) =>
+        set((s) => ({ config: { ...s.config, whalePlus: { ...s.config.whalePlus, ...p } } })),
       setIndicators: (i) =>
         set((s) => ({
           config: {
@@ -81,15 +99,17 @@ export const useStore = create<State>()(
         set((s) => ({ candles: typeof c === "function" ? (c as (p: Candle[]) => Candle[])(s.candles) : c })),
       setCross: (c) => set({ cross: c }),
       setActiveSignal: (id) => set({ activeSignalId: id }),
+      setLastSignalAt: (t) => set({ lastSignalAt: t }),
     }),
     {
       name: "whale-tracker-ai",
-      version: 6,
+      version: 8,
       partialize: (s) => ({
         config: s.config,
         history: s.history,
         whaleActive: s.whaleActive,
         activeSignalId: s.activeSignalId,
+        lastSignalAt: s.lastSignalAt,
       }) as Partial<State>,
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>;
@@ -104,6 +124,8 @@ export const useStore = create<State>()(
             procedural: { ...defaultConfig.procedural, ...(p.config?.procedural ?? {}) },
             proceduralveo4: { ...defaultConfig.proceduralveo4, ...(p.config?.proceduralveo4 ?? {}) },
             proceduralveo5: { ...defaultConfig.proceduralveo5, ...(p.config?.proceduralveo5 ?? {}) },
+            proceduralveo6: { ...defaultConfig.proceduralveo6, ...(p.config?.proceduralveo6 ?? {}) },
+            whalePlus: { ...defaultConfig.whalePlus, ...(p.config?.whalePlus ?? {}) },
             indicatorsEnabled: { ...defaultConfig.indicatorsEnabled, ...(p.config?.indicatorsEnabled ?? {}) },
             indicators: {
               ma: { ...defaultConfig.indicators.ma, ...(p.config?.indicators?.ma ?? {}) },
