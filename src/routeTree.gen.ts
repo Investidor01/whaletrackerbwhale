@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WhalePlusRouteImport } from './routes/whale-plus'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as Proceduralveo5RouteImport } from './routes/proceduralveo5'
 import { Route as Proceduralveo4RouteImport } from './routes/proceduralveo4'
@@ -20,11 +19,6 @@ import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as AnalisesFuturoRouteImport } from './routes/analises-futuro'
 import { Route as IndexRouteImport } from './routes/index'
 
-const WhalePlusRoute = WhalePlusRouteImport.update({
-  id: '/whale-plus',
-  path: '/whale-plus',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
@@ -81,7 +75,6 @@ export interface FileRoutesByFullPath {
   '/proceduralveo4': typeof Proceduralveo4Route
   '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
-  '/whale-plus': typeof WhalePlusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -93,7 +86,6 @@ export interface FileRoutesByTo {
   '/proceduralveo4': typeof Proceduralveo4Route
   '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
-  '/whale-plus': typeof WhalePlusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -106,7 +98,6 @@ export interface FileRoutesById {
   '/proceduralveo4': typeof Proceduralveo4Route
   '/proceduralveo5': typeof Proceduralveo5Route
   '/sobre': typeof SobreRoute
-  '/whale-plus': typeof WhalePlusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -120,7 +111,6 @@ export interface FileRouteTypes {
     | '/proceduralveo4'
     | '/proceduralveo5'
     | '/sobre'
-    | '/whale-plus'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -132,7 +122,6 @@ export interface FileRouteTypes {
     | '/proceduralveo4'
     | '/proceduralveo5'
     | '/sobre'
-    | '/whale-plus'
   id:
     | '__root__'
     | '/'
@@ -144,7 +133,6 @@ export interface FileRouteTypes {
     | '/proceduralveo4'
     | '/proceduralveo5'
     | '/sobre'
-    | '/whale-plus'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -157,18 +145,10 @@ export interface RootRouteChildren {
   Proceduralveo4Route: typeof Proceduralveo4Route
   Proceduralveo5Route: typeof Proceduralveo5Route
   SobreRoute: typeof SobreRoute
-  WhalePlusRoute: typeof WhalePlusRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/whale-plus': {
-      id: '/whale-plus'
-      path: '/whale-plus'
-      fullPath: '/whale-plus'
-      preLoaderRoute: typeof WhalePlusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/sobre': {
       id: '/sobre'
       path: '/sobre'
@@ -245,7 +225,6 @@ const rootRouteChildren: RootRouteChildren = {
   Proceduralveo4Route: Proceduralveo4Route,
   Proceduralveo5Route: Proceduralveo5Route,
   SobreRoute: SobreRoute,
-  WhalePlusRoute: WhalePlusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
