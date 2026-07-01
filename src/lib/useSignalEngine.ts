@@ -106,6 +106,7 @@ export function useSignalEngine() {
   const setActiveSignal = useStore((s) => s.setActiveSignal);
   const addSignal = useStore((s) => s.addSignal);
   const updateSignal = useStore((s) => s.updateSignal);
+  const setLastSignalAt = useStore((s) => s.setLastSignalAt);
 
   const lastClosedTimeRef = useRef<number>(0);
 
@@ -236,6 +237,35 @@ export function useSignalEngine() {
 
     // 4. Generate new signal (only if no active signal & whale on)
     if (!active && whaleActive) {
+      const veo6 = config.proceduralveo6;
+      const wp = config.whalePlus;
+      const anyDirectionAllowed = veo6.allowCall || veo6.allowPut;
+      const anyMethodActive = anyDirectionAllowed || wp.enabled;
+      if (!anyMethodActive) {
+        popupOnce(`veo6:none`, {
+          variant: "info",
+          title: "Ative Proceduralveo6 ou Whale+",
+          message: "Habilite Call/Put no Proceduralveo6 ou EMA de Força no Whale+ para continuar.",
+        });
+        return;
+      }
+      if (veo6.cooldownEnabled && state.lastSignalAt) {
+        const elapsed = (Date.now() - state.lastSignalAt) / 1000;
+        if (elapsed < veo6.cooldownSeconds) {
+          popupOnce(`cooldown:${state.lastSignalAt}`, {
+            variant: "info",
+            title: "Cooldown de Segurança",
+            message: `Aguardando ${Math.ceil(veo6.cooldownSeconds - elapsed)}s para o próximo sinal.`,
+          });
+          return;
+        }
+      }
+      if (veo6.blockNearCloseEnabled) {
+        const nowSec = Math.floor(Date.now() / 1000);
+        const rem = liveCandle.time + tfSec - nowSec;
+        if (rem > 0 && rem <= veo6.blockNearCloseSeconds) return;
+      }
+
       // Dedupe: never emit two signals for the same candle.
       const dup = state.history.find(
         (h) =>
@@ -246,6 +276,7 @@ export function useSignalEngine() {
       if (dup) return;
       const cr = detectCrossings(candles, config.indicators);
       const decision = signalDecision(cr, liveDir, {
+        allowMAonly: config.proceduralveo4.allowMAonly,
         allow80: config.proceduralveo4.allow80,
         allow99: config.proceduralveo4.allow99,
         veo5Enabled: config.proceduralveo5.enabled,
@@ -256,7 +287,26 @@ export function useSignalEngine() {
         },
         enabled: config.indicatorsEnabled,
       });
-      if (decision) {
+      if (!decision) return;
+
+      if (anyDirectionAllowed) {
+        if (decision.direction === "UP" && !veo6.allowCall) return;
+        if (decision.direction === "DOWN" && !veo6.allowPut) return;
+      }
+
+      if (wp.enabled) {
+        const closes = candles.map((c) => c.close);
+        const e = ema(closes, wp.emaPeriod);
+        const lastE = e[e.length - 1];
+        if (lastE == null || !Number.isFinite(lastE)) return;
+        const price = liveCandle.close;
+        const distPct = ((price - lastE) / lastE) * 100;
+        if (Math.abs(distPct) < wp.strengthThreshold) return;
+        const forceDir: Direction = distPct > 0 ? "UP" : "DOWN";
+        if (forceDir !== decision.direction) return;
+      }
+
+      {
         const entryCandleStart = liveCandle.time + tfSec;
         const sig: Signal = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -273,6 +323,7 @@ export function useSignalEngine() {
         };
         addSignal(sig);
         setActiveSignal(sig.id);
+        setLastSignalAt(Date.now());
         popupOnce(`signal:${sig.id}`, {
           variant: "signal",
           title: `Sinal Gerado — ${sig.direction === "UP" ? "CALL" : "PUT"} (${sig.confidence}%)`,
@@ -280,5 +331,5 @@ export function useSignalEngine() {
         });
       }
     }
-  }, [candles, whaleActive, config, addSignal, updateSignal, setCross, setActiveSignal, activeSignalId]);
+  }, [candles, whaleActive, config, addSignal, updateSignal, setCross, setActiveSignal, setLastSignalAt, activeSignalId]);
 }
